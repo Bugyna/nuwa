@@ -289,14 +289,15 @@ const char* event_handle_mouse()
 			// printf("ki: %d\n", ki);
 		}
 	}
+
+	// float mouse_wheel = GetMouseWheelMove();
+	// if (mouse_wheel) {
+		// strcat(__EVENT_BUTTONS, "<MOUSE_WHEEL_MOVE>");
+		
+	// }
 	// if (__EVENT_BUTTONS[0] != '\0')
 		// printf("buttons: %s\n", __EVENT_BUTTONS);
 
-	float mouse_wheel = GetMouseWheelMove();
-	if (mouse_wheel) {
-		// TODO: mouse_wheel event
-		printf("wheel: %f\n", mouse_wheel);
-	}
 	// Vector2 mouse_wheel = GetMouseWheelMoveV();
 	// if (mouse_wheel.x || mouse_wheel.y) printf("wheel: %f.%f\n", mouse_wheel.x, mouse_wheel.y);
 	return __EVENT_BUTTONS;
@@ -311,6 +312,7 @@ void event_handle()
 	bool mouse_move = false;
 	
 	// Vector2 mouse_delta = GetMouseDelta();
+	float mouse_wheel = GetMouseWheelMove();
 	Vector2 mouse_position = GetMousePosition();
 	EVENT e = (EVENT){
 		.mouse_pos = mouse_position,
@@ -327,12 +329,20 @@ void event_handle()
 		.mouse_delta_rel = (Vector2){
 			.x = abs(__WIDGET_FOCUS->pos.x - __LAST_MOUSE_POSITION.x),
 			.y = abs(__WIDGET_FOCUS->pos.y - __LAST_MOUSE_POSITION.y)
-		}
+		},
+
+		.mouse_wheel_move = mouse_wheel
 		
 	};
 	
 	memset(__EVENT_ALL, 0, 300);
 	strcpy(__EVENT_ALL, __EVENT_KEYS);
+	if (mouse_wheel) {
+		strcat(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
+		// TODO: mouse_wheel event
+		// printf("wheel: %f\n", mouse_wheel);
+		
+	}
 	__EVENT_MOUSE = __EVENT_ALL+strlen(__EVENT_ALL);
 	strcpy(__EVENT_MOUSE, __EVENT_BUTTONS);
 	// if (mouse_delta.x || mouse_delta.y) {
@@ -342,6 +352,7 @@ void event_handle()
 		__LAST_MOUSE_POSITION = mouse_position;
 		strcpy(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_MOVE>");
 	}
+
 
 	__WIDGET_ATTENTION = WINDOW_WIDGET;
 	ITERATE_VECTOR(__widgets, WIDGET, val)
@@ -360,33 +371,38 @@ void event_handle()
 	// }
 
 	bool executed_keys = 0;
-	if (__WIDGET_FOCUS == __WIDGET_ATTENTION) {
-		execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
-		executed_keys = 1;
-	}
+	WIDGET* last_focus = __WIDGET_FOCUS;
+
+	// execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 	
 	if (__WIDGET_FOCUS != __WIDGET_ATTENTION && (!mouse_move || __WIDGET_FOCUS != __WIDGET_LOCK)) {
 		int ret = 0;
 		ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
 		ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_MOUSE, e);
+		
+		
+		execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
+		if (strcmp(__EVENT_KEYS, __EVENT_ALL) != 0) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 		// ret |= execute_widget_bind(__WIDGET_ATTENTION, __EVENT_ALL, e);
 		// if (ret) __WIDGET_LOCK = __WIDGET_FOCUS;
 	}
 	
 	else if (__WIDGET_FOCUS == __WIDGET_ATTENTION || (mouse_move && __WIDGET_FOCUS == __WIDGET_LOCK)) {
 		int ret = 0;
-		// ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
-		ret = execute_widget_bind(__WIDGET_FOCUS, __EVENT_MOUSE, e);
-		// ret |= execute_widget_bind(__WIDGET_ATTENTION, __EVENT_ALL, e);
+		// if (!strcmp(__EVENT_BUTTONS, __EVENT_ALL)) ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
+		// ret = execute_widget_bind(__WIDGET_FOCUS, __EVENT_MOUSE, e);
+		ret = execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
+		if (strcmp(__EVENT_KEYS, __EVENT_ALL) != 0) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 		__WIDGET_LOCK = EMPTY_WIDGET;
 		if (mouse_move && ret) __WIDGET_LOCK = __WIDGET_FOCUS;
 	}
 
-	if (!executed_keys) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
+	// if (last_focus != __WIDGET_FOCUS) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
+	// if (strcmp(__EVENT_KEYS, __EVENT_ALL) == 0 && last_focus != __WIDGET_FOCUS) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 
 	
 	
 	if (__EVENT_ALL[0])
-		printf("all: %s %f, %f\n%s\n", __EVENT_ALL, mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+		printf("all: %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
 }
 

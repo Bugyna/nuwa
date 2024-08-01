@@ -275,6 +275,8 @@ int change_style(BIND_FN_PARAMS)
 	if (w->style == &DEFAULT_STYLE)
 		w->style = &DEFAULT_STYLE1;
 	else w->style = &DEFAULT_STYLE;
+
+	printf("changed style\n");
 }
 
 int test_drag(BIND_FN_PARAMS)
@@ -288,6 +290,46 @@ int test_drag(BIND_FN_PARAMS)
 	w->pos.y += e.mouse_delta.y;
 	// w->pos.x += e.mouse_delta_rel.x;
 	// w->pos.y += e.mouse_delta_rel.y;
+	return 1;
+}
+
+int test_drag_x(BIND_FN_PARAMS)
+{
+	Vector2 mouse_pos = e.mouse_pos;
+	Vector2 rel_pos = get_relative_pos_PointRec(GetMousePosition(), w->pos);
+	// w->pos.x = mouse_pos.x - rel_pos.x;
+	// w->pos.y = mouse_pos.y - rel_pos.y;
+	w->pos.x += e.mouse_delta.x;
+	// w->pos.x += e.mouse_delta_rel.x;
+	// w->pos.y += e.mouse_delta_rel.y;
+	return 1;
+}
+
+int test_drag_y(BIND_FN_PARAMS)
+{
+	Vector2 mouse_pos = e.mouse_pos;
+	Vector2 rel_pos = get_relative_pos_PointRec(GetMousePosition(), w->pos);
+	// w->pos.x = mouse_pos.x - rel_pos.x;
+	// w->pos.y = mouse_pos.y - rel_pos.y;
+	w->pos.y += e.mouse_delta.y;
+	// w->pos.x += e.mouse_delta_rel.x;
+	// w->pos.y += e.mouse_delta_rel.y;
+	return 1;
+}
+
+int test_resize(BIND_FN_PARAMS)
+{
+	printf("resize\n");
+
+	if (e.mouse_wheel_move > 0) {
+		w->pos.width += 10;
+		w->pos.height += 10;
+	}
+
+	else {
+		w->pos.width -= 10;
+		w->pos.height -= 10;
+	}
 	return 1;
 }
 
@@ -311,7 +353,11 @@ WIDGET* create_widget(int x, int y, int width, int height, const char* text, STY
 
 	__system_bind_widget(w, "<MOUSE_BUTTON_LEFT>", __focus_set);
 	bind_widget(w, "<MOUSE_BUTTON_LEFT><MOUSE_MOVE>", test_drag);
+	bind_widget(w, "<MOUSE_BUTTON_RIGHT><MOUSE_MOVE>", test_drag_x);
+	bind_widget(w, "<KEY_LEFT_SHIFT><MOUSE_BUTTON_RIGHT><MOUSE_MOVE>", test_drag_y);
 	bind_widget(w, "[KEY_A]", change_style);
+	bind_widget(w, "<KEY_A><MOUSE_MOVE>", change_style);
+	bind_widget(w, "<MOUSE_WHEEL_MOVE>", test_resize);
 
 	w = WIDGET_VECTOR_ADD(&__widgets, ww);
 	return w;

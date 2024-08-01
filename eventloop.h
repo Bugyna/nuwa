@@ -48,7 +48,7 @@ typedef struct
 	Vector2 mouse_delta;
 	Vector2 mouse_pos_rel;
 	Vector2 mouse_delta_rel;
-
+	float mouse_wheel_move;
 	
 } EVENT;
 
