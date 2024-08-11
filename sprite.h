@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #include "util.c"
+#include "arena.h"
 #include "SLL/linked_list.h"
 
 
@@ -19,15 +20,37 @@ typedef struct
 	Image img;
 	Texture2D tex;
 	Rectangle src, dst;
+	Vector2 cosi;
 } SPRITE;
 
+DEFINE_VECTOR(SPRITE_VECTOR, SPRITE)
+DEFINE_VECTOR(SPRITE_PTR_VECTOR, SPRITE*)
 DEFINE_LINKED_LIST(SPRITE_LIST, SPRITE)
 
-typedef struct
+typedef struct LAYER
 {
-	SPRITE_LIST sprites;
-	
+	SPRITE_VECTOR sprites;
+	int index;
+
 } LAYER;
+
+
+void draw_sprite(SPRITE* s);
+
+
+void layer_init(LAYER* l, int index)
+{
+	SPRITE_VECTOR_INIT(&l->sprites, 30);
+}
+
+
+void draw_layer(LAYER* l)
+{
+	ITERATE_VECTOR(l->sprites, SPRITE, sprite)
+	{
+		draw_sprite(sprite);
+	}
+}
 
 
 
@@ -52,6 +75,11 @@ void unload_sprite(SPRITE* s)
 {
 	UnloadImage(s->img);
 	UnloadTexture(s->tex);
+}
+
+void draw_sprite(SPRITE* s)
+{
+	DrawTexturePro(s->tex, s->src, s->dst, s->cosi, 0, WHITE);
 }
 
 #endif

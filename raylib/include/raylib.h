@@ -206,6 +206,7 @@ typedef struct Vector2 {
     float y;                // Vector y component
 } Vector2;
 
+
 // Vector3, 3 components
 typedef struct Vector3 {
     float x;                // Vector x component
@@ -220,6 +221,7 @@ typedef struct Vector4 {
     float z;                // Vector z component
     float w;                // Vector w component
 } Vector4;
+
 
 // Quaternion, 4 components (Vector4 alias)
 typedef Vector4 Quaternion;

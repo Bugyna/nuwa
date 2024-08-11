@@ -1,5 +1,4 @@
-
-#include <raylib.h>
+#include "raylib/include/raylib.h"
 #include <raymath.h>
 #include <locale.h>
 
@@ -7,6 +6,7 @@
 #include "sprite.h"
 #include "gui.c"
 #include "eventloop.c"
+#include "editor.c"
 
 #if defined(PLATFORM_DESKTOP)
 	#define GLSL_VERSION			330
@@ -15,6 +15,7 @@
 #endif
 
 #define MAX_POSTPRO_SHADERS		 12
+
 
 typedef enum {
 	FX_GRAYSCALE = 0,
@@ -65,7 +66,7 @@ int main(void)
 
 	InitWindow(screenWidth, screenHeight, "raylib [shaders] example - postprocessing shader");
 
-	init_gui_system();
+	init_gui_system(screenWidth, screenHeight);
 
 	// Define the camera to look into our 3d world
 	Camera camera = { 0 };
@@ -147,8 +148,27 @@ int main(void)
 	SetTargetFPS(60);				   // Set our game to run at 60 frames-per-second
 	//--------------------------------------------------------------------------------------
 
-	WIDGET* test_widget = create_widget(100, 100, 200, 200, "test", NULL);
-	WIDGET* test_widget1 = create_widget(100, 400, 200, 200, "test1", NULL);
+	WIDGET* test_frame = create_frame(400, 400, NULL);
+	// WIDGET* test_child = create_child_widget(test_frame, 
+	WIDGET* test_widget = create_widget(100, 100, W_LABEL, 200, 200, "test", NULL);
+	WIDGET* test_widget1 = create_widget(100, 400, W_LABEL, 200, 200, "test1", NULL);
+	WIDGET* test_widget2 = create_widget(100, 400, W_LABEL, 200, 200, "test3", NULL);
+
+
+	WIDGET* test_dropdown = create_dropdown("select sumn", NULL);
+	dropdown_add_option(test_dropdown, "sumn0");
+
+	add_child_widget(test_frame, test_widget);
+	add_child_widget(test_frame, test_widget1);
+	add_child_widget(test_frame, test_widget2);
+
+	add_widget_to_render_queue(test_frame);
+	add_widget_to_render_queue(test_dropdown);
+	// add_widget_to_render_queue(test_widget);
+	// add_widget_to_render_queue(test_widget1);
+	// add_widget_to_render_queue(test_widget2);
+	// remove_widget_from_render_queue(test_widget);
+	
 
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
@@ -207,9 +227,10 @@ int main(void)
 			DrawText(__WIDGET_ATTENTION->w_name, 500, 240, 20, BLACK);
 			DrawText(__WIDGET_LOCK->w_name, 500, 280, 20, BLACK);
 			
-			
-			draw_widget(test_widget);
-			draw_widget(test_widget1);
+
+			draw_gui();
+			// draw_widget(test_widget);
+			// draw_widget(test_widget1);
 			// event_handle_keyboard();
 			// event_handle_mouse();
 			event_handle();

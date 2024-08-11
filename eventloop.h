@@ -12,16 +12,15 @@
 
 #ifndef EVENTLOOP_H_
 #define EVENTLOOP_H_
-char __EVENT_KEYS[150];
-char __EVENT_KEYS_JUST_PRESSED[150];
-char __EVENT_BUTTONS[150];
+char __EVENT_KEYS[150] = {};
+char __EVENT_KEYS_JUST_PRESSED[150] = {};
+char __EVENT_BUTTONS[150] = {};
 char* __EVENT_MOUSE;
-char __EVENT_ALL[300];
+char __EVENT_ALL[300] = {};
+
+bool __BUTTONS_CURRENTLY_HELD[6] = {0, 0, 0, 0, 0};
 
 Vector2 __LAST_MOUSE_POSITION = {.x=-1, .y=-1};
-
-
-
 
 static int __CHARS_BUFFER[150];
 int __CHARS_BUFFER_INDEX = 0;
@@ -33,7 +32,6 @@ void event_handle();
 
 // DEFINE_HASHMAP(__SYSTEM_KEYBINDS_MAP, int)
 // __SYSTEM_KEYBINDS_MAP __system_keybinds;
-
 
 
 // void init_eventloop()
@@ -51,6 +49,10 @@ typedef struct
 	float mouse_wheel_move;
 	
 } EVENT;
+
+#define bullshit 1
+
+int a = 0;
 
 
 #endif

@@ -8,9 +8,9 @@
 #include <string.h>
 
 #include "util.c"
-#include "gui.h"
-#include "arena.h"
-#include "eventloop.h"
+// #include "gui.h"
+// #include "arena.h"
+// #include "eventloop.h"
 
 // DEFINE_LINKED_LIST(KEYCODE_LIST, int)
 // KEYCODE_LIST KEYS_HELD;
@@ -201,7 +201,8 @@ const char* event_handle_keyboard()
 {
 
 	__CHARS_BUFFER_INDEX = 0;
-	memset(__EVENT_KEYS, 0, 150);
+	memset(__EVENT_KEYS , 0, 150);
+	memset(__EVENT_KEYS_JUST_PRESSED , 0, 150);
 	memset(__CHARS_BUFFER, 0, 150);
 	const char* tmp = NULL;
 
@@ -221,12 +222,15 @@ const char* event_handle_keyboard()
 	int key1 = GetKeyPressed();
 	while (key1 != 0) {
 		__KEYS_HELD[__KEYS_HELD_INDEX++] = key1;
-
+		tmp = get_key_name(key1);
+		strcat(__EVENT_KEYS_JUST_PRESSED, "(");
+		strcat(__EVENT_KEYS_JUST_PRESSED, tmp);
+		strcat(__EVENT_KEYS_JUST_PRESSED, ")");
 		// tmp = get_key_name(key1);
 		// strcat(__EVENT_KEYS, "<");
 		// strcat(__EVENT_KEYS, tmp);
 		// strcat(__EVENT_KEYS, ">");
-		// printf("key: %s\n", tmp);
+		// printf("key pressed: %s\n", get_key_name(key1));
 		key1 = GetKeyPressed();
 	}
 
@@ -282,12 +286,19 @@ const char* event_handle_mouse()
 	memset(__EVENT_BUTTONS, 0, 150);
 	for (int i = 0; i < 6; i++) {
 		if (IsMouseButtonDown(i)) {
-			strcat(__EVENT_BUTTONS, "<");
-			strcat(__EVENT_BUTTONS, get_mouse_button_name(i));
-			strcat(__EVENT_BUTTONS, ">");
-			// ki+=strlen(tmp);
-			// printf("ki: %d\n", ki);
+			if (!__BUTTONS_CURRENTLY_HELD[i]) {
+				strcat(__EVENT_BUTTONS, "[");
+				strcat(__EVENT_BUTTONS, get_mouse_button_name(i));
+				strcat(__EVENT_BUTTONS, "]");
+			}
+
+			else {
+				strcat(__EVENT_BUTTONS, "<");
+				strcat(__EVENT_BUTTONS, get_mouse_button_name(i));
+				strcat(__EVENT_BUTTONS, ">");
+			}
 		}
+		__BUTTONS_CURRENTLY_HELD[i] = IsMouseButtonDown(i);
 	}
 
 	// float mouse_wheel = GetMouseWheelMove();
@@ -343,6 +354,9 @@ void event_handle()
 		// printf("wheel: %f\n", mouse_wheel);
 		
 	}
+
+
+	WIDGET* last_attention = __WIDGET_ATTENTION;
 	__EVENT_MOUSE = __EVENT_ALL+strlen(__EVENT_ALL);
 	strcpy(__EVENT_MOUSE, __EVENT_BUTTONS);
 	// if (mouse_delta.x || mouse_delta.y) {
@@ -355,8 +369,10 @@ void event_handle()
 
 
 	__WIDGET_ATTENTION = WINDOW_WIDGET;
+
 	ITERATE_VECTOR(__widgets, WIDGET, val)
 	{	
+		// printf("check: %s\n", val->w_name);
 		if (CheckCollisionPointRec(mouse_position, val->pos)) {
 			__WIDGET_ATTENTION = val;
 		}
@@ -373,6 +389,11 @@ void event_handle()
 	bool executed_keys = 0;
 	WIDGET* last_focus = __WIDGET_FOCUS;
 
+	if (IsWindowResized()) 
+	{
+		execute_widget_bind(WINDOW_WIDGET, "<WINDOW_RESIZED>", e);
+	}
+
 	// execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 	
 	if (__WIDGET_FOCUS != __WIDGET_ATTENTION && (!mouse_move || __WIDGET_FOCUS != __WIDGET_LOCK)) {
@@ -382,6 +403,7 @@ void event_handle()
 		
 		
 		execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
+		execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS_JUST_PRESSED, e);
 		if (strcmp(__EVENT_KEYS, __EVENT_ALL) != 0) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 		// ret |= execute_widget_bind(__WIDGET_ATTENTION, __EVENT_ALL, e);
 		// if (ret) __WIDGET_LOCK = __WIDGET_FOCUS;
@@ -392,17 +414,35 @@ void event_handle()
 		// if (!strcmp(__EVENT_BUTTONS, __EVENT_ALL)) ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
 		// ret = execute_widget_bind(__WIDGET_FOCUS, __EVENT_MOUSE, e);
 		ret = execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
+		execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS_JUST_PRESSED, e);
 		if (strcmp(__EVENT_KEYS, __EVENT_ALL) != 0) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 		__WIDGET_LOCK = EMPTY_WIDGET;
 		if (mouse_move && ret) __WIDGET_LOCK = __WIDGET_FOCUS;
 	}
 
+	if (__WIDGET_FOCUS != last_focus) {
+		printf("lost_focus\n");
+		execute_widget_bind(last_focus, "<LOST_FOCUS>", e);
+		execute_widget_bind(__WIDGET_FOCUS, "<FOCUS>", e);
+	}
+
+
+	if (__WIDGET_ATTENTION != last_attention) {
+		execute_widget_bind(last_attention, "<LOST_ATTENTION>", e);
+		execute_widget_bind(__WIDGET_ATTENTION, "<ATTENTION>", e);
+	}
 	// if (last_focus != __WIDGET_FOCUS) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 	// if (strcmp(__EVENT_KEYS, __EVENT_ALL) == 0 && last_focus != __WIDGET_FOCUS) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 
 	
 	
-	if (__EVENT_ALL[0])
-		printf("all: %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+	if (__EVENT_ALL[0]) {
+		printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+		// printf("FLUSH\n\n\n");
+	}
+
+	// else printf("\n\n");
+
+
 }
 

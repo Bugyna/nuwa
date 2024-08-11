@@ -7,8 +7,12 @@
 
 #include "util.c"
 #include "sprite.h"
+#include "arena.h"
 
 #ifndef EDITOR_H_
 #define EDITOR_H_
+
+
+
 
 #endif
