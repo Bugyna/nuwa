@@ -67,6 +67,7 @@ int main(void)
 	InitWindow(screenWidth, screenHeight, "raylib [shaders] example - postprocessing shader");
 
 	init_gui_system(screenWidth, screenHeight);
+	// SetExitKey(0); 
 
 	// Define the camera to look into our 3d world
 	Camera camera = { 0 };
@@ -145,7 +146,7 @@ int main(void)
 	// Texture2D bed_texture = LoadTextureFromImage(bed);          // Image converted to texture, GPU memory (VRAM)
 	// UnloadImage(bed);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM
 
-	SetTargetFPS(60);				   // Set our game to run at 60 frames-per-second
+	SetTargetFPS(120);				   // Set our game to run at 60 frames-per-second
 	//--------------------------------------------------------------------------------------
 
 	WIDGET* test_frame = create_frame(400, 400, NULL);
@@ -158,12 +159,16 @@ int main(void)
 	WIDGET* test_dropdown = create_dropdown("select sumn", NULL);
 	dropdown_add_option(test_dropdown, "sumn0");
 
+	WIDGET* test_text_input = create_text_input("", NULL);
+
 	add_child_widget(test_frame, test_widget);
 	add_child_widget(test_frame, test_widget1);
 	add_child_widget(test_frame, test_widget2);
 
 	add_widget_to_render_queue(test_frame);
 	add_widget_to_render_queue(test_dropdown);
+	add_widget_to_render_queue(test_text_input);
+
 	// add_widget_to_render_queue(test_widget);
 	// add_widget_to_render_queue(test_widget1);
 	// add_widget_to_render_queue(test_widget2);
@@ -226,6 +231,7 @@ int main(void)
 			DrawText(__WIDGET_FOCUS->w_name, 500, 200, 20, BLACK);
 			DrawText(__WIDGET_ATTENTION->w_name, 500, 240, 20, BLACK);
 			DrawText(__WIDGET_LOCK->w_name, 500, 280, 20, BLACK);
+			DrawText(__EVENT_ALL, 500, 300, 20, BLACK);
 			
 
 			draw_gui();
@@ -233,10 +239,8 @@ int main(void)
 			// draw_widget(test_widget1);
 			// event_handle_keyboard();
 			// event_handle_mouse();
-			event_handle();
-		
-		
 		EndDrawing();
+		event_handle();
 		//----------------------------------------------------------------------------------
 	}
 

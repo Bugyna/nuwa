@@ -16,8 +16,6 @@
 // KEYCODE_LIST KEYS_HELD;
 
 
-
-
 // const char* __SYSTEM_KEYS_STRING[] = {"KEY_NULL", "KEY_APOSTROPHE", "KEY_COMMA", "KEY_MINUS", "KEY_PERIOD", "KEY_SLASH", "KEY_ZERO", "KEY_ONE", "KEY_TWO", "KEY_THREE", "KEY_FOUR", "KEY_FIVE", "KEY_SIX", "KEY_SEVEN", "KEY_EIGHT", "KEY_NINE", "KEY_SEMICOLON", "KEY_EQUAL", "KEY_A", "KEY_B", "KEY_C", "KEY_D", "KEY_E", "KEY_F", "KEY_G", "KEY_H", "KEY_I", "KEY_J", "KEY_K", "KEY_L", "KEY_M", "KEY_N", "KEY_O", "KEY_P", "KEY_Q", "KEY_R", "KEY_S", "KEY_T", "KEY_U", "KEY_V", "KEY_W", "KEY_X", "KEY_Y", "KEY_Z", "KEY_LEFT_BRACKET", "KEY_BACKSLASH", "KEY_RIGHT_BRACKET", "KEY_GRAVE", "KEY_SPACE", "KEY_ESCAPE", "KEY_ENTER", "KEY_TAB", "KEY_BACKSPACE", "KEY_INSERT", "KEY_DELETE", "KEY_RIGHT", "KEY_LEFT", "KEY_DOWN", "KEY_UP", "KEY_PAGE_UP", "KEY_PAGE_DOWN", "KEY_HOME", "KEY_END", "KEY_CAPS_LOCK", "KEY_SCROLL_LOCK", "KEY_NUM_LOCK", "KEY_PRINT_SCREEN", "KEY_PAUSE", "KEY_F1", "KEY_F2", "KEY_F3", "KEY_F4", "KEY_F5", "KEY_F6", "KEY_F7", "KEY_F8", "KEY_F9", "KEY_F10", "KEY_F11", "KEY_F12", "KEY_LEFT_SHIFT", "KEY_LEFT_CONTROL", "KEY_LEFT_ALT", "KEY_LEFT_SUPER", "KEY_RIGHT_SHIFT", "KEY_RIGHT_CONTROL", "KEY_RIGHT_ALT", "KEY_RIGHT_SUPER", "KEY_KB_MENU", "KEY_KP_0", "KEY_KP_1", "KEY_KP_2", "KEY_KP_3", "KEY_KP_4", "KEY_KP_5", "KEY_KP_6", "KEY_KP_7", "KEY_KP_8", "KEY_KP_9", "KEY_KP_DECIMAL", "KEY_KP_DIVIDE", "KEY_KP_MULTIPLY", "KEY_KP_SUBTRACT", "KEY_KP_ADD", "KEY_KP_ENTER", "KEY_KP_EQUAL", "KEY_BACK", "KEY_MENU", "KEY_VOLUME_UP", "KEY_VOLUME_DOWN"};
 
 
@@ -197,52 +195,13 @@ const char* u32_to_utf8_string(int c)
 }
 
 
-const char* event_handle_keyboard()
+void event_process_held_keys()
 {
-
-	__CHARS_BUFFER_INDEX = 0;
-	memset(__EVENT_KEYS , 0, 150);
-	memset(__EVENT_KEYS_JUST_PRESSED , 0, 150);
-	memset(__CHARS_BUFFER, 0, 150);
 	const char* tmp = NULL;
-
-	
-	int key = GetCharPressed();	
-	while (key != 0) {
-		tmp = u32_to_utf8_string(key);
-		__CHARS_BUFFER[__CHARS_BUFFER_INDEX++] = key;
-		// strcat(__CHARS_BUFFER, tmp);
-		// printf("key: %s\n", tmp);
-		// printf("key: %i %s \n", key, get_key_name(key1));
-		// printf("key: %i\n", key);
-		key = GetCharPressed();
-	}
-
-
-	int key1 = GetKeyPressed();
-	while (key1 != 0) {
-		__KEYS_HELD[__KEYS_HELD_INDEX++] = key1;
-		tmp = get_key_name(key1);
-		strcat(__EVENT_KEYS_JUST_PRESSED, "(");
-		strcat(__EVENT_KEYS_JUST_PRESSED, tmp);
-		strcat(__EVENT_KEYS_JUST_PRESSED, ")");
-		// tmp = get_key_name(key1);
-		// strcat(__EVENT_KEYS, "<");
-		// strcat(__EVENT_KEYS, tmp);
-		// strcat(__EVENT_KEYS, ">");
-		// printf("key pressed: %s\n", get_key_name(key1));
-		key1 = GetKeyPressed();
-	}
-
-
-	// char keys[100];
-	
-	tmp = NULL;
 	size_t ki = 0;
 	for (int i = 0; i < __KEYS_HELD_INDEX; i++)
 	// for (int i = 0; i < 360; i++)
 	{
-		// if (IsKeyDown(i)) {
 		if (IsKeyDown(__KEYS_HELD[i])) {
 			tmp = get_key_name(__KEYS_HELD[i]);
 			strcat(__EVENT_KEYS, "<");
@@ -257,15 +216,96 @@ const char* event_handle_keyboard()
 		// }
 		else {
 			tmp = get_key_name(__KEYS_HELD[i]);
-			strcat(__EVENT_KEYS, "[");
+			strcat(__EVENT_KEYS, "(");
 			strcat(__EVENT_KEYS, tmp);
-			strcat(__EVENT_KEYS, "]");
+			strcat(__EVENT_KEYS, ")");
 			memmove(&__KEYS_HELD[i], &__KEYS_HELD[i+1], (__KEYS_HELD_INDEX-i)*sizeof(int));
 			__KEYS_HELD_INDEX--;
 			i--;
 		}
-			// printf("Key: %s\n", get_key_name(i));
 	}
+}
+
+const char* event_handle_keyboard()
+{
+	
+	__CHARS_BUFFER_INDEX = 0;
+	memset(__EVENT_KEYS , 0, 150);
+	memset(__EVENT_KEYS_JUST_PRESSED , 0, 150);
+	memset(__CHARS_BUFFER, 0, 150);
+	const char* tmp = NULL;
+
+
+	bool should_process_held_keys = false;
+	// event_process_held_keys();
+	
+	int key = GetCharPressed();	
+	while (key != 0) {
+		tmp = u32_to_utf8_string(key);
+		__CHARS_BUFFER[__CHARS_BUFFER_INDEX++] = key;
+		printf("charpresssed: %d\n", key);
+		// strcat(__CHARS_BUFFER, tmp);
+		// printf("key: %s\n", tmp);
+		// printf("key: %i %s \n", key, get_key_name(key1));
+		// printf("key: %i\n", key);
+		key = GetCharPressed();
+		should_process_held_keys = true;
+	}
+
+
+	int key1 = GetKeyPressed();
+	while (key1 != 0) {
+		__KEYS_HELD[__KEYS_HELD_INDEX++] = key1;
+		tmp = get_key_name(key1);
+		strcat(__EVENT_KEYS_JUST_PRESSED, "[");
+		strcat(__EVENT_KEYS_JUST_PRESSED, tmp);
+		strcat(__EVENT_KEYS_JUST_PRESSED, "]");
+		// tmp = get_key_name(key1);
+		// strcat(__EVENT_KEYS, "<");
+		// strcat(__EVENT_KEYS, tmp);
+		// strcat(__EVENT_KEYS, ">");
+		should_process_held_keys = true;
+		__DELTA_SINCE_LAST_UPDATE = -0.1;
+		printf("key pressed: %s\n", get_key_name(key1));
+		key1 = GetKeyPressed();
+	}
+
+
+	// event_process_held_keys();
+	__DELTA_SINCE_LAST_UPDATE += GetFrameTime();
+	if (should_process_held_keys) {
+		event_process_held_keys();
+	}
+	
+	else {
+		if (__DELTA_SINCE_LAST_UPDATE >= 0.033 && __KEYS_HELD_INDEX > 0) {
+			event_process_held_keys();
+			__DELTA_SINCE_LAST_UPDATE = 0;
+		}
+	}
+
+
+	// else {
+		// tmp = NULL;
+		// size_t ki = 0;
+		// for (int i = 0; i < __KEYS_HELD_INDEX; i++)
+		// {
+			// if (!IsKeyDown(__KEYS_HELD[i])) {
+				// tmp = get_key_name(__KEYS_HELD[i]);
+				// strcat(__EVENT_KEYS, "(");
+				// strcat(__EVENT_KEYS, tmp);
+				// strcat(__EVENT_KEYS, ")");
+				// memmove(&__KEYS_HELD[i], &__KEYS_HELD[i+1], (__KEYS_HELD_INDEX-i)*sizeof(int));
+				// __KEYS_HELD_INDEX--;
+				// i--;
+			// }
+		// }
+	// }
+
+	// printf("delta: %f %f %f\n", GetFrameTime(), GetTime(), __DELTA_SINCE_LAST_UPDATE);
+
+
+	// char keys[100];
 
 	// for (int i = 0; i < 360; i++)
 	// {
@@ -325,6 +365,7 @@ void event_handle()
 	// Vector2 mouse_delta = GetMouseDelta();
 	float mouse_wheel = GetMouseWheelMove();
 	Vector2 mouse_position = GetMousePosition();
+	
 	EVENT e = (EVENT){
 		.mouse_pos = mouse_position,
 		.mouse_delta = (Vector2){
@@ -342,12 +383,15 @@ void event_handle()
 			.y = abs(__WIDGET_FOCUS->pos.y - __LAST_MOUSE_POSITION.y)
 		},
 
-		.mouse_wheel_move = mouse_wheel
+		.mouse_wheel_move = mouse_wheel,
+
+		.char_held = __CHARS_BUFFER[__CHARS_BUFFER_INDEX-1],
 		
 	};
 	
 	memset(__EVENT_ALL, 0, 300);
 	strcpy(__EVENT_ALL, __EVENT_KEYS);
+	
 	if (mouse_wheel) {
 		strcat(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
 		// TODO: mouse_wheel event
@@ -420,6 +464,10 @@ void event_handle()
 		if (mouse_move && ret) __WIDGET_LOCK = __WIDGET_FOCUS;
 	}
 
+	if (__CHARS_BUFFER[0] != '\0') {
+		execute_widget_bind(__WIDGET_FOCUS, "<KEYPRESS>", e);
+	}
+
 	if (__WIDGET_FOCUS != last_focus) {
 		printf("lost_focus\n");
 		execute_widget_bind(last_focus, "<LOST_FOCUS>", e);
@@ -437,7 +485,8 @@ void event_handle()
 	
 	
 	if (__EVENT_ALL[0]) {
-		printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+		// printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+	// printf("all: %s\n", __CHARS_BUFFER);
 		// printf("FLUSH\n\n\n");
 	}
 

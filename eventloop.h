@@ -12,6 +12,9 @@
 
 #ifndef EVENTLOOP_H_
 #define EVENTLOOP_H_
+
+float __DELTA_SINCE_LAST_UPDATE = 0.f;
+
 char __EVENT_KEYS[150] = {};
 char __EVENT_KEYS_JUST_PRESSED[150] = {};
 char __EVENT_BUTTONS[150] = {};
@@ -47,6 +50,8 @@ typedef struct
 	Vector2 mouse_pos_rel;
 	Vector2 mouse_delta_rel;
 	float mouse_wheel_move;
+
+	int char_held;
 	
 } EVENT;
 
