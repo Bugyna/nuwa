@@ -1,4 +1,4 @@
-#include "raylib/include/raylib.h"
+#include <raylib.h>
 #include <raymath.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -583,7 +583,8 @@ int text_input_handle(BIND_FN_PARAMS)
 {
 	
 	printf("handle_text_input: %c '%s' %d, %d | Vec2<%f, %f>\n\n", e.char_held, w->text.str, w->text.available, w->text.index, w->cursor.y, w->cursor.x);
-	STRING_ADD(&w->text, (char)e.char_held);
+	// STRING_ADD(&w->text, (char)e.char_held);
+	STRING_INSERT(&w->text, (char)e.char_held, w->cursor.x);
 	// if (w->lines.items[(int)w->cursor.y]->str == NULL) {
 		// STRING_INIT(w->lines.items[(int)w->cursor.y], 15);
 		// printf("ok ok ok\n\n");
@@ -595,17 +596,19 @@ int text_input_handle(BIND_FN_PARAMS)
 int text_input_backspace(BIND_FN_PARAMS)
 {
 	printf("handling backspace\n");
-	STRING_POP(&w->text);
+	// STRING_POP(&w->text);
 	w->cursor.x -= 1;
+	STRING_REMOVE(&w->text, w->cursor.x);
 	if (w->cursor.x < 0) w->cursor.y -= 1;
 	if (w->cursor.y <= 0) w->cursor.y = 1;
 }
 
 int text_input_newline(BIND_FN_PARAMS)
 {
-	STRING_ADD(&w->text, '\n');
-	STRING* p = &w->lines.items[(int)w->cursor.y-1];
-	// STRING_INIT(p, w->text.index+1);
+	
+	// STRING_ADD(&w->text, '\n');
+	// STRING* p = &w->lines.items[(int)w->cursor.y-1];
+	STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
 	STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
 	// *p = w->text;
 	// STRING_VECTOR_INSERT(*w->lines, w->cursor.y);
@@ -615,9 +618,69 @@ int text_input_newline(BIND_FN_PARAMS)
 	
 	p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
 	if (p->str == NULL) STRING_INIT(p, 10);
+	// STRING_INIT(p, 10);
+	// p = STRING_VECTOR_INSERT(&w->lines, *p, w->cursor.y-1);
 	w->text = *p;
 }
 
+
+int move_up(BIND_FN_PARAMS)
+{
+	// STRING_ADD(&w->text, '\n');
+	printf("cursor up: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+	
+	// STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
+	w->cursor.y--;
+	if (w->cursor.y <= 0.f) {
+		w->cursor.y = 1.f;
+	}
+
+	else {
+		printf("cursor up A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y);
+		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		if (p->str == NULL) STRING_INIT(p, 10);
+		// else w->cursor.x = p->index-2;
+	
+		w->text = *p;
+		// w->text.index -= 1;
+	}
+}
+
+int move_down(BIND_FN_PARAMS)
+{
+	printf("cursor down: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+
+	w->cursor.y++;
+	if (w->cursor.y-1 >= w->lines.index) {
+		// w->cursor.y--;
+		w->cursor.y = w->lines.index;
+	}
+
+	else {
+		printf("cursor down A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+	
+		// STRING_ADD(&w->text, '\n');
+		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-2);
+		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		if (p->str == NULL) { STRING_INIT(p, 10); w->cursor.x = 0; }
+		// else w->cursor.x = p->index;
+		
+		w->text = *p;
+	}
+}
+
+int move_left(BIND_FN_PARAMS)
+{
+	w->cursor.x--;
+	if (w->cursor.x < 0) move_up(w, e);
+}
+
+int move_right(BIND_FN_PARAMS)
+{
+	w->cursor.x++;
+	if (w->cursor.x > w->text.index) move_down(w, e);
+}
 
 int print_lines(BIND_FN_PARAMS)
 {
@@ -642,6 +705,10 @@ WIDGET* create_text_input(const char* text, STYLE* style)
 	__system_bind_widget(text_input, "<KEYPRESS>", text_input_handle);
 	__system_bind_widget(text_input, "<KEY_BACKSPACE>", text_input_backspace);
 	__system_bind_widget(text_input, "[KEY_ENTER]", text_input_newline);
+	__system_bind_widget(text_input, "[KEY_UP]", move_up);
+	__system_bind_widget(text_input, "[KEY_DOWN]", move_down);
+	__system_bind_widget(text_input, "<KEY_LEFT>", move_left);
+	__system_bind_widget(text_input, "<KEY_RIGHT>", move_right);
 	__system_unbind_widget(text_input, "[KEY_A]");
 	bind_widget(text_input, "[KEY_TAB]", print_lines);
 	STRING_VECTOR_INIT(&text_input->lines, 10);
@@ -687,7 +754,96 @@ void remove_widget_from_render_queue(WIDGET* w)
 {
 	WIDGET_PTR_VECTOR_DELETE(&WIDGET_RENDER_QUEUE, w);
 }
+
+
+float get_string_width(Font font, const char *text, float fontSize, float spacing)
+{
+
+	if ((font.texture.id == 0) || (text == NULL)) return 0; // Security check
+
+	int size = TextLength(text);	// Get size in bytes of text
+	int tempByteCounter = 0;		// Used to count longer text line num chars
+	int byteCounter = 0;
+
+	float textWidth = 0.0f;
+	float tempTextWidth = 0.0f;	 // Used to count longer text line width
+
+	float textHeight = fontSize;
+	float scaleFactor = fontSize/(float)font.baseSize;
+
+	int letter = 0;				 // Current character
+	int index = 0;				  // Index position in sprite font
+
+	for (int i = 0; i < size;)
+	{
+		byteCounter++;
+
+		int next = 0;
+		letter = GetCodepoint(&text[i], &next);
+		index = GetGlyphIndex(font, letter);
+
+		i += next;
+
+		if (letter != '\n')
+		{
+			if (font.glyphs[index].advanceX != 0) textWidth += font.glyphs[index].advanceX;
+			else textWidth += (font.recs[index].width + font.glyphs[index].offsetX);
+		}
+
+		if (tempByteCounter < byteCounter) tempByteCounter = byteCounter;
+	}
+
+	if (tempTextWidth < textWidth) tempTextWidth = textWidth;
+
+
+	return tempTextWidth*scaleFactor + (float)((tempByteCounter - 1)*spacing);;
+}
+
+float get_string_width_untill_i(Font font, const char *text, float fontSize, float spacing, int size)
+{
+
+	if ((font.texture.id == 0) || (text == NULL)) return 0; // Security check
+
+	int _size = TextLength(text);	// Get size in bytes of text
+	if (size > _size) size = _size;
 	
+	int tempByteCounter = 0;		// Used to count longer text line num chars
+	int byteCounter = 0;
+
+	float textWidth = 0.0f;
+	float tempTextWidth = 0.0f;	 // Used to count longer text line width
+
+	float textHeight = fontSize;
+	float scaleFactor = fontSize/(float)font.baseSize;
+
+	int letter = 0;				 // Current character
+	int index = 0;				  // Index position in sprite font
+
+	for (int i = 0; i < size;)
+	{
+		byteCounter++;
+
+		int next = 0;
+		letter = GetCodepoint(&text[i], &next);
+		index = GetGlyphIndex(font, letter);
+
+		i += next;
+
+		if (letter != '\n')
+		{
+			if (font.glyphs[index].advanceX != 0) textWidth += font.glyphs[index].advanceX;
+			else textWidth += (font.recs[index].width + font.glyphs[index].offsetX);
+		}
+
+		if (tempByteCounter < byteCounter) tempByteCounter = byteCounter;
+	}
+
+	if (tempTextWidth < textWidth) tempTextWidth = textWidth;
+
+
+    return tempTextWidth*scaleFactor + (float)((tempByteCounter - 1)*spacing);;
+}
+
 
 void draw_widget(WIDGET* w)
 {
@@ -706,6 +862,7 @@ void draw_widget(WIDGET* w)
 		// line = STRING_VECTOR_GET(&w->lines, w->cursor.y)->str;
 	// }
 
+	float cursor_offset = get_string_width_untill_i(w->style->font, line, w->style->font_size, w->style->font_spacing, w->cursor.x);
 	Vector2 text_size = MeasureTextEx(w->style->font, line, w->style->font_size, w->style->font_spacing);
 	Vector2 text_pos;
 	
@@ -729,8 +886,9 @@ void draw_widget(WIDGET* w)
 	if (w->type == W_TEXT_INPUT) {
 		DrawRectangleRec(
 			(Rectangle){
-				.x=text_pos.x+text_size.x,
-				.y=text_pos.y+w->cursor.y*w->style->font_size,
+				.x=text_pos.x+cursor_offset,
+				// .y=text_pos.y+w->cursor.y*w->style->font_size,
+				.y=text_pos.y,
 				.width=10,
 				.height=w->style->font_size
 			},

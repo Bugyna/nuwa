@@ -79,13 +79,13 @@ int main(void)
 	camera.projection = CAMERA_PERSPECTIVE;			 // Camera projection type
 
 	// Model model = LoadModel("alzak.gltf");				 // Load OBJ model
-	Model model = LoadModel("ahri/Ahri Star Guardian.obj");				 // Load OBJ model
+	// Model model = LoadModel("ahri/Ahri Star Guardian.obj");				 // Load OBJ model
 	// Model model = LoadModel("Hatsune Miku/mikitm500/mikitm500_obj.obj");				 // Load OBJ model
 	// Model model = LoadModel("Hatsune Miku/mikitm000/mikitm000_obj.obj");				 // Load OBJ model
-	Texture2D texture = LoadTexture("ahri/Ahri_Skin14_TX_CM.png"); // Load model texture (diffuse map)
+	// Texture2D texture = LoadTexture("ahri/Ahri_Skin14_TX_CM.png"); // Load model texture (diffuse map)
 	// Texture2D texture1 = LoadTexture("ahri/Ahri_Skin14_TAILS_TX_CM.png"); // Load model texture (diffuse map)
 	// Texture2D texture2 = LoadTexture("ahri/Ahri_Skin14_Familiar_TX_CM.png"); // Load model texture (diffuse map)
-	model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;		// Set model diffuse texture
+	// model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;		// Set model diffuse texture
 	// model.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = texture1;		// Set model diffuse texture
 	// model.materials[2].maps[MATERIAL_MAP_DIFFUSE].texture = texture2;		// Set model diffuse texture
 
@@ -169,6 +169,7 @@ int main(void)
 	add_widget_to_render_queue(test_dropdown);
 	add_widget_to_render_queue(test_text_input);
 
+	focus_set(test_text_input);
 	// add_widget_to_render_queue(test_widget);
 	// add_widget_to_render_queue(test_widget1);
 	// add_widget_to_render_queue(test_widget2);
@@ -182,8 +183,8 @@ int main(void)
 		//----------------------------------------------------------------------------------
 		// UpdateCamera(&camera, CAMERA_ORBITAL);
 
-		if (IsKeyPressed(KEY_RIGHT)) currentShader++;
-		else if (IsKeyPressed(KEY_LEFT)) currentShader--;
+		// if (IsKeyPressed(KEY_RIGHT)) currentShader++;
+		// else if (IsKeyPressed(KEY_LEFT)) currentShader--;
 
 		if (currentShader >= MAX_POSTPRO_SHADERS) currentShader = 0;
 		else if (currentShader < 0) currentShader = MAX_POSTPRO_SHADERS - 1;
@@ -252,7 +253,7 @@ int main(void)
 	// UnloadTexture(test_texture);		 // Unload texture
 	// UnloadTexture(texture);		 // Unload texture
 	unload_all_assets(asset_list);
-	UnloadModel(model);			 // Unload model
+	// UnloadModel(model);			 // Unload model
 	UnloadRenderTexture(target);	// Unload render texture
 
 	CloseWindow();				  // Close window and OpenGL context

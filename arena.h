@@ -50,15 +50,8 @@ TYPE* NAME##_INSERT(NAME* vec, TYPE p, size_t index)                            
 TYPE* NAME##_REPLACE(NAME* vec, TYPE p, size_t index)                                  \
 {                                                                    \
 	if (index >= vec->index) return NAME##_ADD(vec, p);               \
-	vec->index++;                                                     \
-	if (vec->index >= vec->available) {                               \
-		vec->available *= 2;                                           \
-		vec->items = realloc(vec->items, vec->available);                  \
-		memset(vec->items + vec->index, 0, vec->available - vec->index);     \
-	}                                                                 \
-	memcpy(vec->items + index + 1, vec->items + index, vec->index - index);  \
 	vec->items[index] = p;                                            \
-	return &vec->items[vec->index-1];                                   \
+	return &vec->items[index];                                   \
 }                                                                    \
 void NAME##_REMOVE(NAME* vec, size_t index)                          \
 {                                                                    \
@@ -84,6 +77,7 @@ void NAME##_POP(NAME* vec)                                           \
 }                                                                    \
 TYPE* NAME##_GET(NAME* vec, size_t index)                            \
 {                                                                    \
+	if (index >= vec->index) return NAME##_ADD(vec, (TYPE){0});       \
 	return &vec->items[index];                                          \
 }                                                                    \
 void NAME##_SET(NAME* vec, TYPE* val, size_t index)                  \
