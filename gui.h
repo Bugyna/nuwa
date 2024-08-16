@@ -593,34 +593,88 @@ int text_input_handle(BIND_FN_PARAMS)
 	w->cursor.x++;
 }
 
+int move_up(BIND_FN_PARAMS);
+
 int text_input_backspace(BIND_FN_PARAMS)
 {
 	printf("handling backspace\n");
 	// STRING_POP(&w->text);
+	if (w->cursor.y == 1.f && w->cursor.x == 0.f) return 1;
+
 	w->cursor.x -= 1;
-	STRING_REMOVE(&w->text, w->cursor.x);
-	if (w->cursor.x < 0) w->cursor.y -= 1;
-	if (w->cursor.y <= 0) w->cursor.y = 1;
+
+	if (w->cursor.x < 0) {
+		// STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y);
+		move_up(w, e);
+		STRING_POP(&w->text);
+		w->cursor.x = w->text.index;
+		printf("cursor delete: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+		// STRING_MERGE(&w->text, STRING_VECTOR_GET(&w->lines, w->cursor.y));
+		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y);
+		STRING_MERGE(&w->text, p);
+		printf("text: %s %d\n", w->text.str, w->text.index);
+		STRING_VECTOR_REMOVE(&w->lines, w->cursor.y);
+		// STRING_MERGE(STRING_VECTOR_GET(&w->lines, w->cursor.y-1), w->text);
+	}
+	else {
+		STRING_REMOVE(&w->text, w->cursor.x);
+	}
+	// w->cursor.x = w->text.index--;
+	// if (w->cursor.y <= 0) w->cursor.y = 1;
+	// printf("text A: %s %d\n", w->text.str, w->text.index);
 }
 
 int text_input_newline(BIND_FN_PARAMS)
 {
-	
+	printf("cursor mewline: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	// STRING_ADD(&w->text, '\n');
-	// STRING* p = &w->lines.items[(int)w->cursor.y-1];
-	STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
-	STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
-	// *p = w->text;
-	// STRING_VECTOR_INSERT(*w->lines, w->cursor.y);
-	w->cursor.y++;
-	w->cursor.x = 0;
-	// w->text = *w->lines.items[(int)w->cursor.y];
+	// STRING_INSERT(&w->text, '\n', w->cursor.x);
+	// w->cursor.x++;
 	
-	p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
-	if (p->str == NULL) STRING_INIT(p, 10);
-	// STRING_INIT(p, 10);
-	// p = STRING_VECTOR_INSERT(&w->lines, *p, w->cursor.y-1);
-	w->text = *p;
+	if ((int)w->cursor.x == w->text.index-1) {
+		// STRING* p = &w->lines.items[(int)w->cursor.y-1];
+		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		STRING_INSERT(&w->text, '\n', w->cursor.x);
+		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
+		// *p = w->text;
+		// STRING_VECTOR_INSERT(*w->lines, w->cursor.y);
+		w->cursor.y++;
+		w->cursor.x = 0;
+		// w->text = *w->lines.items[(int)w->cursor.y];
+
+		p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		if (p->str == NULL) STRING_INIT(p, 10);
+		// STRING_INIT(p, 10);
+		// p = STRING_VECTOR_INSERT(&w->lines, *p, w->cursor.y-1);
+		w->text = *p;
+	}
+
+	else {
+		STRING p;
+		STRING_INIT(&p, (w->text.index-(int)w->cursor.x)*2);
+		printf("xx: %d\n", w->text.index-(int)w->cursor.x);
+		STRING_MERGE_F(&p, &w->text, w->cursor.x);
+
+		w->cursor.y++;
+
+		// STRING_ADD(&w->text, '\0');
+		// memset(w->text.str+(int)w->cursor.x+1, '\0', w->text.available-(int)w->cursor.x);
+		// w->text.str[(int)w->cursor.x] = '\0';
+		// STRING_INSERT(&w->text, '\n', w->cursor.x);
+		w->text.index = w->cursor.x;
+		printf("text: %s %d\n", w->text.str, w->text.index);
+		STRING_ADD(&w->text, '\n');
+		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
+
+		STRING_VECTOR_INSERT(&w->lines, p, w->cursor.y);
+
+		w->cursor.x = 0;
+		w->text = p;
+		printf("text A: %s %d\n", w->text.str, w->text.index);
+	}
+
+	printf("cursor mewline A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+	
 }
 
 
@@ -651,13 +705,13 @@ int move_down(BIND_FN_PARAMS)
 {
 	printf("cursor down: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 
-	w->cursor.y++;
-	if (w->cursor.y-1 >= w->lines.index) {
+	if (w->cursor.y >= w->lines.index) {
 		// w->cursor.y--;
 		w->cursor.y = w->lines.index;
 	}
 
 	else {
+		w->cursor.y++;
 		printf("cursor down A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	
 		// STRING_ADD(&w->text, '\n');
@@ -672,14 +726,25 @@ int move_down(BIND_FN_PARAMS)
 
 int move_left(BIND_FN_PARAMS)
 {
+	printf("cursor left: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	w->cursor.x--;
-	if (w->cursor.x < 0) move_up(w, e);
+	if (w->cursor.x < 0) {
+		if (w->cursor.y > 1) { move_up(w, e); w->cursor.x = w->text.index; }
+		else w->cursor.x++;
+	}
+	printf("cursor left A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 }
 
 int move_right(BIND_FN_PARAMS)
 {
+	printf("cursor right: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	w->cursor.x++;
-	if (w->cursor.x > w->text.index) move_down(w, e);
+	if (w->cursor.x > w->text.index) {
+		if (w->cursor.y < w->lines.index) { move_down(w, e); w->cursor.x = 0; }
+		else w->cursor.x--;
+	}
+
+	printf("cursor right A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 }
 
 int print_lines(BIND_FN_PARAMS)

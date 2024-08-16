@@ -8,6 +8,8 @@
 #include "eventloop.c"
 #include "editor.c"
 
+
+
 #if defined(PLATFORM_DESKTOP)
 	#define GLSL_VERSION			330
 #else   // PLATFORM_ANDROID, PLATFORM_WEB
@@ -174,7 +176,6 @@ int main(void)
 	// add_widget_to_render_queue(test_widget1);
 	// add_widget_to_render_queue(test_widget2);
 	// remove_widget_from_render_queue(test_widget);
-	
 
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
@@ -236,6 +237,7 @@ int main(void)
 			
 
 			draw_gui();
+
 			// draw_widget(test_widget);
 			// draw_widget(test_widget1);
 			// event_handle_keyboard();

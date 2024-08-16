@@ -18,13 +18,18 @@ struct STRING {
 	bool initialized;
 };
 
+void STRING_REALLOC(STRING* str, size_t new_size)
+{
+	str->available = new_size*2;
+	str->str = realloc(str->str, str->available);
+	memset(str->str+str->index, 0, str->available-str->index);
+}
+
 char* STRING_ADD(STRING* str, char p)
 {
 	str->str[str->index++] = p;
 	if (str->index >= str->available) {
-		str->available *= 2;
-		str->str = realloc(str->str, str->available);
-		memset(str->str+str->index, 0, str->available-str->index);
+		STRING_REALLOC(str, str->available);
 	}
 	return &str->str[str->index-1];
 }
@@ -95,6 +100,26 @@ void STRING_INIT_WITH_VAL(STRING* str, char* val, size_t size, size_t index)
 	str->str = val;
 	str->available = size;
 	str->index = index;
+}
+
+void STRING_MERGE(STRING* dest, STRING* src)
+{
+	int index = dest->index+src->index;
+	if (index > dest->available) {
+		STRING_REALLOC(dest, index);
+	}
+	strcpy(dest->str+dest->index, src->str);
+	dest->index = index;
+}
+
+void STRING_MERGE_F(STRING* dest, STRING* src, int offset)
+{
+	int index = dest->index+src->index-offset;
+	if (index > dest->available) {
+		STRING_REALLOC(dest, index);
+	}
+	strcpy(dest->str+dest->index, src->str+offset);
+	dest->index = index;
 }
 
 
