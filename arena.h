@@ -12,6 +12,44 @@
 #define ARENA_H_
 
 
+typedef struct ARENA ARENA;
+struct ARENA {
+	char* buf;
+	size_t index, available;
+};
+
+void ARENA_REALLOC(ARENA* a, size_t new_size)
+{
+	printf("ARENA REALLOC\n");
+	a->available = new_size;
+	a->buf = realloc(a->buf, a->available);
+	memset(a->buf+a->index, 0, a->available-a->index);
+}
+
+char* ARENA_ALLOC(ARENA* a, size_t size)
+{
+	int index = a->index;
+	a->index += size;
+	if (a->index >= a->available) {
+		ARENA_REALLOC(a, a->available+size);
+	}
+	return &a->buf[index];
+}
+
+void ARENA_INIT(ARENA* a, size_t size)
+{
+	a->buf = malloc(size);
+	memset(a->buf, '\0', size);
+	a->available = size;
+	a->index = 0;
+}
+
+void ARENA_FREE(ARENA* a)
+{
+	a->index = 0;
+}
+
+
 
 
 #define ITERATE_VECTOR(VEC, TYPE, VAL)\
@@ -77,7 +115,7 @@ void NAME##_POP(NAME* vec)                                           \
 }                                                                    \
 TYPE* NAME##_GET(NAME* vec, size_t index)                            \
 {                                                                    \
-	if (index >= vec->index) return NAME##_ADD(vec, (TYPE){0});       \
+	if (index > vec->index) return NAME##_ADD(vec, (TYPE){0});       \
 	return &vec->items[index];                                          \
 }                                                                    \
 void NAME##_SET(NAME* vec, TYPE* val, size_t index)                  \

@@ -176,6 +176,7 @@ int main(void)
 	// add_widget_to_render_queue(test_widget1);
 	// add_widget_to_render_queue(test_widget2);
 	// remove_widget_from_render_queue(test_widget);
+	char text_pos_buf[100];
 
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
@@ -234,6 +235,8 @@ int main(void)
 			DrawText(__WIDGET_ATTENTION->w_name, 500, 240, 20, BLACK);
 			DrawText(__WIDGET_LOCK->w_name, 500, 280, 20, BLACK);
 			DrawText(__EVENT_ALL, 500, 300, 20, BLACK);
+			sprintf(text_pos_buf, "[%d:%d]", (int)test_text_input->cursor.y, (int)test_text_input->cursor.x);
+			DrawText(text_pos_buf, 500, 320, 20, BLACK);
 			
 
 			draw_gui();

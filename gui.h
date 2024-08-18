@@ -481,6 +481,7 @@ WIDGET* create_widget(int x, int y, WIDGET_TYPE type, int width, int height, con
 	size_t len = strlen(text);
 	if (len <= 1) len = 2;
 
+	// STRING_INITA(&w->text, &w->str_pool, len);
 	STRING_INIT(&w->text, len);
 	strcpy(w->text.str, text);
 	// STRING_SET(&w->text, w->content_text, len);
@@ -631,9 +632,10 @@ int text_input_newline(BIND_FN_PARAMS)
 	// STRING_INSERT(&w->text, '\n', w->cursor.x);
 	// w->cursor.x++;
 	
-	if ((int)w->cursor.x == w->text.index-1) {
+	if ((int)w->cursor.x == w->text.index) {
 		// STRING* p = &w->lines.items[(int)w->cursor.y-1];
-		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		// STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1)
+		// printf("heeeree:333\n");;
 		STRING_INSERT(&w->text, '\n', w->cursor.x);
 		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
 		// *p = w->text;
@@ -642,23 +644,25 @@ int text_input_newline(BIND_FN_PARAMS)
 		w->cursor.x = 0;
 		// w->text = *w->lines.items[(int)w->cursor.y];
 
-		p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
-		if (p->str == NULL) STRING_INIT(p, 10);
+		// STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		STRING p;
+		if (p.str == NULL) STRING_INIT(&p, 10);
 		// STRING_INIT(p, 10);
 		// p = STRING_VECTOR_INSERT(&w->lines, *p, w->cursor.y-1);
-		w->text = *p;
+		// STRING_ADD(&w->text, '\n');
+		w->text = p;
 	}
 
 	else {
 		STRING p;
 		STRING_INIT(&p, (w->text.index-(int)w->cursor.x)*2);
-		printf("xx: %d\n", w->text.index-(int)w->cursor.x);
+		printf("xx: %d, %d\n", p.index, w->text.index-(int)w->cursor.x);
 		STRING_MERGE_F(&p, &w->text, w->cursor.x);
 
 		w->cursor.y++;
 
 		// STRING_ADD(&w->text, '\0');
-		// memset(w->text.str+(int)w->cursor.x+1, '\0', w->text.available-(int)w->cursor.x);
+		memset(w->text.str + ((int)w->cursor.x), '\0', w->text.available-(int)w->text.index);
 		// w->text.str[(int)w->cursor.x] = '\0';
 		// STRING_INSERT(&w->text, '\n', w->cursor.x);
 		w->text.index = w->cursor.x;
@@ -670,6 +674,7 @@ int text_input_newline(BIND_FN_PARAMS)
 
 		w->cursor.x = 0;
 		w->text = p;
+		// STRING_ADD(&w->text, '\n');
 		printf("text A: %s %d\n", w->text.str, w->text.index);
 	}
 
@@ -695,6 +700,8 @@ int move_up(BIND_FN_PARAMS)
 		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
 		if (p->str == NULL) STRING_INIT(p, 10);
 		// else w->cursor.x = p->index-2;
+
+		if (w->cursor.x > p->index) w->cursor.x = p->index-1;
 	
 		w->text = *p;
 		// w->text.index -= 1;
@@ -719,6 +726,8 @@ int move_down(BIND_FN_PARAMS)
 		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
 		if (p->str == NULL) { STRING_INIT(p, 10); w->cursor.x = 0; }
 		// else w->cursor.x = p->index;
+
+		if (w->cursor.x > p->index) w->cursor.x = p->index-1;
 		
 		w->text = *p;
 	}
@@ -729,7 +738,7 @@ int move_left(BIND_FN_PARAMS)
 	printf("cursor left: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	w->cursor.x--;
 	if (w->cursor.x < 0) {
-		if (w->cursor.y > 1) { move_up(w, e); w->cursor.x = w->text.index; }
+		if (w->cursor.y > 1) { move_up(w, e); w->cursor.x = w->text.index-1; }
 		else w->cursor.x++;
 	}
 	printf("cursor left A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
@@ -738,13 +747,28 @@ int move_left(BIND_FN_PARAMS)
 int move_right(BIND_FN_PARAMS)
 {
 	printf("cursor right: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
-	w->cursor.x++;
-	if (w->cursor.x > w->text.index) {
+	if (w->cursor.x >= w->text.index || w->text.str[(int)w->cursor.x] == '\n' || w->text.str[(int)w->cursor.x] == '\r' || w->text.str[(int)w->cursor.x+1] == '\n' || w->text.str[(int)w->cursor.x+1] == '\r') {
 		if (w->cursor.y < w->lines.index) { move_down(w, e); w->cursor.x = 0; }
-		else w->cursor.x--;
+	}
+	else {
+		w->cursor.x++;
 	}
 
 	printf("cursor right A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+}
+
+int move_start_of_line(BIND_FN_PARAMS)
+{
+
+	w->cursor.x = 0;
+	return 1;
+}
+
+int move_end_of_line(BIND_FN_PARAMS)
+{
+
+	w->cursor.x = w->text.index-1;
+	return 1;
 }
 
 int print_lines(BIND_FN_PARAMS)
@@ -774,6 +798,8 @@ WIDGET* create_text_input(const char* text, STYLE* style)
 	__system_bind_widget(text_input, "[KEY_DOWN]", move_down);
 	__system_bind_widget(text_input, "<KEY_LEFT>", move_left);
 	__system_bind_widget(text_input, "<KEY_RIGHT>", move_right);
+	__system_bind_widget(text_input, "<KEY_HOME>", move_start_of_line);
+	__system_bind_widget(text_input, "[KEY_END]", move_end_of_line);
 	__system_unbind_widget(text_input, "[KEY_A]");
 	bind_widget(text_input, "[KEY_TAB]", print_lines);
 	STRING_VECTOR_INIT(&text_input->lines, 10);
@@ -930,6 +956,7 @@ void draw_widget(WIDGET* w)
 	float cursor_offset = get_string_width_untill_i(w->style->font, line, w->style->font_size, w->style->font_spacing, w->cursor.x);
 	Vector2 text_size = MeasureTextEx(w->style->font, line, w->style->font_size, w->style->font_spacing);
 	Vector2 text_pos;
+	Vector2 _text_pos;
 	
 	switch (w->style->text_justify)
 	{
@@ -946,9 +973,32 @@ void draw_widget(WIDGET* w)
 			text_pos = (Vector2){w->pos.x+w->style->padding, w->pos.y+w->style->padding};
 	}
 
-	DrawTextEx(w->style->font, line, text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
-
 	if (w->type == W_TEXT_INPUT) {
+		_text_pos = text_pos;
+
+		float ht = w->pos.height / w->style->font_size;
+		float hht = hht / 2;
+		int i = hht - ht;
+		
+			printf("i: %d %f %f \n", i, ht, hht);
+		if (w->cursor.y-ht < 1) i = 0;
+		
+		for (i; i < ht; i++) {
+			// if (w->pos.y+w->style->font_size*i > w->pos.y + w->pos.height) break;
+			if (w->cursor.y+i > w->lines.index+1) break;
+
+			if (i == 0) {
+				DrawTextEx(w->style->font, w->text.str, _text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
+			}
+			else {
+				STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y+i);
+				// STRING* p = &w->text;
+				if (p == NULL || p->str == NULL) break;
+				DrawTextEx(w->style->font, p->str, _text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
+			}
+			_text_pos.y += w->style->font_size;
+		}
+		
 		DrawRectangleRec(
 			(Rectangle){
 				.x=text_pos.x+cursor_offset,
@@ -959,6 +1009,10 @@ void draw_widget(WIDGET* w)
 			},
 			w->style->border_color
 		);
+	}
+
+	else {
+		DrawTextEx(w->style->font, line, text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
 	}
 	
 	if (w->style->border_style == BORDER_SOLID)
