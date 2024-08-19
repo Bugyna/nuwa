@@ -202,6 +202,7 @@ void event_process_held_keys()
 	for (int i = 0; i < __KEYS_HELD_INDEX; i++)
 	// for (int i = 0; i < 360; i++)
 	{
+		// printf("i: %d %d\n", i, __KEYS_HELD_INDEX);
 		if (IsKeyDown(__KEYS_HELD[i])) {
 			tmp = get_key_name(__KEYS_HELD[i]);
 			strcat(__EVENT_KEYS, "<");
@@ -235,7 +236,20 @@ const char* event_handle_keyboard()
 	memset(__CHARS_BUFFER, 0, 150);
 	const char* tmp = NULL;
 
-
+	size_t ki = 0;
+	for (int i = 0; i < __KEYS_HELD_INDEX; i++)
+	{
+		if (!IsKeyDown(__KEYS_HELD[i])) {
+			tmp = get_key_name(__KEYS_HELD[i]);
+			strcat(__EVENT_KEYS, "(");
+			strcat(__EVENT_KEYS, tmp);
+			strcat(__EVENT_KEYS, ")");
+			memmove(&__KEYS_HELD[i], &__KEYS_HELD[i+1], (__KEYS_HELD_INDEX-i)*sizeof(int));
+			__KEYS_HELD_INDEX--;
+			i--;
+		}
+	}
+	
 	bool should_process_held_keys = false;
 	// event_process_held_keys();
 	
@@ -243,7 +257,7 @@ const char* event_handle_keyboard()
 	while (key != 0) {
 		tmp = u32_to_utf8_string(key);
 		__CHARS_BUFFER[__CHARS_BUFFER_INDEX++] = key;
-		printf("charpresssed: %d\n", key);
+		// printf("charpresssed: %d\n", key);
 		// strcat(__CHARS_BUFFER, tmp);
 		// printf("key: %s\n", tmp);
 		// printf("key: %i %s \n", key, get_key_name(key1));
@@ -266,7 +280,7 @@ const char* event_handle_keyboard()
 		// strcat(__EVENT_KEYS, ">");
 		should_process_held_keys = true;
 		__DELTA_SINCE_LAST_UPDATE = -0.1;
-		printf("key pressed: %s\n", get_key_name(key1));
+		// printf("key pressed: %s\n", get_key_name(key1));
 		key1 = GetKeyPressed();
 	}
 

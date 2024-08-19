@@ -1,4 +1,4 @@
-#include "raylib/include/raylib.h"
+#include <raylib.h>
 #include <raymath.h>
 #include <locale.h>
 
@@ -7,7 +7,7 @@
 #include "gui.c"
 #include "eventloop.c"
 #include "editor.c"
-
+#include <sys/resource.h>
 
 
 #if defined(PLATFORM_DESKTOP)
@@ -54,6 +54,8 @@ static const char *postproShaderText[] = {
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
+
+
 int main(void)
 {
 	setlocale(LC_ALL, "");
@@ -177,7 +179,6 @@ int main(void)
 	// add_widget_to_render_queue(test_widget2);
 	// remove_widget_from_render_queue(test_widget);
 	char text_pos_buf[100];
-
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
 	{
@@ -191,36 +192,36 @@ int main(void)
 		if (currentShader >= MAX_POSTPRO_SHADERS) currentShader = 0;
 		else if (currentShader < 0) currentShader = MAX_POSTPRO_SHADERS - 1;
 		//----------------------------------------------------------------------------------
-
+		event_handle();
 		// Draw
 		// //----------------------------------------------------------------------------------
-		BeginTextureMode(target);	   // Enable drawing to texture
-			ClearBackground(RAYWHITE);  // Clear texture background
-			// draw_widget(test_widget);
-			// DrawTexture(wall_texture, 0, 100, WHITE);
-			// DrawTexture(wall1_texture, wall_texture.width, 100, WHITE);
-			// DrawTexturePro(wall1_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){0, 0, 1200, 960}, (Vector2){0, 0}, 0, WHITE);
-			// DrawTexture(cabinet_texture, cabinet_texture.width, 400, WHITE);
-			// DrawTexture(painting_texture, 800, 100, WHITE);
-			// DrawTexture(bed_texture, 500, 200, WHITE);
-			// DrawTexturePro(test_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){200, 200, 400, 400}, (Vector2){0, 0}, 0, WHITE);
+		// BeginTextureMode(target);	   // Enable drawing to texture
+			// ClearBackground(RAYWHITE);  // Clear texture background
+			// // draw_widget(test_widget);
+			// // DrawTexture(wall_texture, 0, 100, WHITE);
+			// // DrawTexture(wall1_texture, wall_texture.width, 100, WHITE);
+			// // DrawTexturePro(wall1_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){0, 0, 1200, 960}, (Vector2){0, 0}, 0, WHITE);
+			// // DrawTexture(cabinet_texture, cabinet_texture.width, 400, WHITE);
+			// // DrawTexture(painting_texture, 800, 100, WHITE);
+			// // DrawTexture(bed_texture, 500, 200, WHITE);
+			// // DrawTexturePro(test_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){200, 200, 400, 400}, (Vector2){0, 0}, 0, WHITE);
 			
-			// DrawTextureRec(test_texture, (Rectangle){ 0, 0, 200, 300 }, (Vector2){ 0, 0 }, WHITE);
-			// BeginMode3D(camera);		// Begin 3d mode drawing
-				// DrawModel(model, position, 0.1f, WHITE);   // Draw 3d model with texture
-				// DrawGrid(10, 1.0f);	 // Draw a grid
-			// EndMode3D();				// End 3d mode drawing, returns to orthographic 2d mode
-		EndTextureMode();			   // End drawing to texture (now we have a texture available for next passes)
+			// // DrawTextureRec(test_texture, (Rectangle){ 0, 0, 200, 300 }, (Vector2){ 0, 0 }, WHITE);
+			// // BeginMode3D(camera);		// Begin 3d mode drawing
+				// // DrawModel(model, position, 0.1f, WHITE);   // Draw 3d model with texture
+				// // DrawGrid(10, 1.0f);	 // Draw a grid
+			// // EndMode3D();				// End 3d mode drawing, returns to orthographic 2d mode
+		// EndTextureMode();			   // End drawing to texture (now we have a texture available for next passes)
 		
 		BeginDrawing();
 			ClearBackground(RAYWHITE);  // Clear screen background
 			// DrawTexture(test_texture, screenWidth/2 - texture.width/2, screenHeight/2 - texture.height/2, WHITE);
 			
 			// Render generated texture using selected postprocessing shader
-			BeginShaderMode(shaders[currentShader]);
-				// NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
-				DrawTextureRec(target.texture, (Rectangle){ 0, 0, (float)target.texture.width, (float)-target.texture.height }, (Vector2){ 0, 0 }, WHITE);
-			EndShaderMode();
+			// BeginShaderMode(shaders[currentShader]);
+				// // NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
+				// DrawTextureRec(target.texture, (Rectangle){ 0, 0, (float)target.texture.width, (float)-target.texture.height }, (Vector2){ 0, 0 }, WHITE);
+			// EndShaderMode();
 
 			// Draw 2d shapes and text over drawn texture
 			DrawRectangle(0, 9, 580, 30, Fade(LIGHTGRAY, 0.7f));
@@ -246,7 +247,6 @@ int main(void)
 			// event_handle_keyboard();
 			// event_handle_mouse();
 		EndDrawing();
-		event_handle();
 		//----------------------------------------------------------------------------------
 	}
 

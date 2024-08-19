@@ -12,6 +12,7 @@
 
 
 #define ERROR_OUT(err, ...) {printf("ERROR: " err"\n", __VA_ARGS__); exit(-33);}
+#define NUWA_ERROR(err, ...) {printf("NUWA ERROR: " err"\n" __VA_ARGS__); exit(-33);}
 
 #define TEST(a, b) {something or the other}
 

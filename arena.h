@@ -62,24 +62,43 @@ struct NAME {                                                        \
 	TYPE* items;                                                        \
 	size_t index, available;                                          \
 };                                                                   \
+                                                                                   \
+void NAME##_REALLOC(NAME* vec, size_t new_size)                                    \
+{                                                                                  \
+	vec->available = new_size;                                                      \
+	TYPE* tmp = vec->items;                                                         \
+	vec->items = realloc(vec->items, vec->available*sizeof(TYPE));                               \
+	printf("REALLOC FOR: " #NAME " | new size: %d | at index: %d | old ptr -> new ptr: %p -> %p\n", vec->available, vec->index, tmp, vec->items);                                             \
+	if (vec->items == NULL) { NUWA_ERROR("realloc failed for: " #NAME "\n"); }         \
+	memset(vec->items + vec->index, 0, vec->available - vec->index);                   \
+}                                                                                  \
+                                                                                   \
 TYPE* NAME##_ADD(NAME* vec, TYPE p)                                  \
 {                                                                    \
-	vec->items[vec->index++] = p;                                       \
-	if (vec->index >= vec->available) {                               \
-		vec->available *= 2;                                           \
-		vec->items = realloc(vec->items, vec->available);                  \
-		memset(vec->items+vec->index, 0, vec->available-vec->index);     \
+	printf(#NAME ": add %d\n", vec->index);                             \
+	if (vec->index+1 >= vec->available) {                               \
+		NAME##_REALLOC(vec, vec->available*2);                         \
 	}                                                                 \
-	return &vec->items[vec->index-1];                                   \
+	vec->items[vec->index] = p;                                       \
+	return &vec->items[vec->index++];                                   \
 }                                                                    \
 TYPE* NAME##_INSERT(NAME* vec, TYPE p, size_t index)                                  \
 {                                                                    \
 	if (index >= vec->index) return NAME##_ADD(vec, p);               \
+	printf(#NAME ": insert\n");                                       \
 	vec->index++;                                                     \
-	if (vec->index >= vec->available) {                               \
-		vec->available *= 2;                                           \
-		vec->items = realloc(vec->items, vec->available);                  \
-		memset(vec->items + vec->index, 0, vec->available - vec->index);     \
+	if (vec->index+1 >= vec->available) {                               \
+		NAME##_REALLOC(vec, vec->available*2);                         \
+	}                                                                 \
+	memcpy(vec->items + index + 1, vec->items + index, vec->index - index);  \
+	vec->items[index] = p;                                            \
+	return &vec->items[vec->index-1];                                   \
+}                                                                    \
+TYPE* NAME##_INSERT_FORCE(NAME* vec, TYPE p, size_t index)                                  \
+{                                                                    \
+	vec->index++;                                                     \
+	if (vec->index+1 >= vec->available) {                               \
+		NAME##_REALLOC(vec, vec->available*2);                         \
 	}                                                                 \
 	memcpy(vec->items + index + 1, vec->items + index, vec->index - index);  \
 	vec->items[index] = p;                                            \
@@ -88,8 +107,9 @@ TYPE* NAME##_INSERT(NAME* vec, TYPE p, size_t index)                            
 TYPE* NAME##_REPLACE(NAME* vec, TYPE p, size_t index)                                  \
 {                                                                    \
 	if (index >= vec->index) return NAME##_ADD(vec, p);               \
+	printf(#NAME ": replace\n");                                       \
 	vec->items[index] = p;                                            \
-	return &vec->items[index];                                   \
+	return &vec->items[index];                                        \
 }                                                                    \
 void NAME##_REMOVE(NAME* vec, size_t index)                          \
 {                                                                    \
@@ -115,7 +135,8 @@ void NAME##_POP(NAME* vec)                                           \
 }                                                                    \
 TYPE* NAME##_GET(NAME* vec, size_t index)                            \
 {                                                                    \
-	if (index > vec->index) return NAME##_ADD(vec, (TYPE){0});       \
+	if (index+1 > vec->index) return NAME##_ADD(vec, (TYPE){0});               \
+	printf(#NAME ": GET %d\n", index);                                  \
 	return &vec->items[index];                                          \
 }                                                                    \
 void NAME##_SET(NAME* vec, TYPE* val, size_t index)                  \

@@ -583,7 +583,7 @@ WIDGET* create_button(const char* text, STYLE* style, int (*func) (BIND_FN_PARAM
 int text_input_handle(BIND_FN_PARAMS)
 {
 	
-	printf("handle_text_input: %c '%s' %d, %d | Vec2<%f, %f>\n\n", e.char_held, w->text.str, w->text.available, w->text.index, w->cursor.y, w->cursor.x);
+	// printf("handle_text_input: %c '%s' %d, %d | Vec2<%f, %f>\n\n", e.char_held, w->text.str, w->text.available, w->text.index, w->cursor.y, w->cursor.x);
 	// STRING_ADD(&w->text, (char)e.char_held);
 	STRING_INSERT(&w->text, (char)e.char_held, w->cursor.x);
 	// if (w->lines.items[(int)w->cursor.y]->str == NULL) {
@@ -592,6 +592,7 @@ int text_input_handle(BIND_FN_PARAMS)
 	// }
 	// STRING_ADD(&w->lines.items[(int)w->cursor.y], (char)e.char_held);
 	w->cursor.x++;
+	return 1;
 }
 
 int move_up(BIND_FN_PARAMS);
@@ -623,7 +624,10 @@ int text_input_backspace(BIND_FN_PARAMS)
 	// w->cursor.x = w->text.index--;
 	// if (w->cursor.y <= 0) w->cursor.y = 1;
 	// printf("text A: %s %d\n", w->text.str, w->text.index);
+	return 1;
 }
+
+int print_lines(BIND_FN_PARAMS);
 
 int text_input_newline(BIND_FN_PARAMS)
 {
@@ -645,12 +649,13 @@ int text_input_newline(BIND_FN_PARAMS)
 		// w->text = *w->lines.items[(int)w->cursor.y];
 
 		// STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
-		STRING p;
-		if (p.str == NULL) STRING_INIT(&p, 10);
+		// STRING p;
+		// if (p.str == NULL)
+		STRING_INIT(&w->text, 10);
 		// STRING_INIT(p, 10);
 		// p = STRING_VECTOR_INSERT(&w->lines, *p, w->cursor.y-1);
 		// STRING_ADD(&w->text, '\n');
-		w->text = p;
+		// w->text = p;
 	}
 
 	else {
@@ -674,12 +679,11 @@ int text_input_newline(BIND_FN_PARAMS)
 
 		w->cursor.x = 0;
 		w->text = p;
-		// STRING_ADD(&w->text, '\n');
 		printf("text A: %s %d\n", w->text.str, w->text.index);
 	}
 
 	printf("cursor mewline A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
-	
+	return 1;
 }
 
 
@@ -689,23 +693,24 @@ int move_up(BIND_FN_PARAMS)
 	printf("cursor up: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	
 	// STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
-	w->cursor.y--;
-	if (w->cursor.y <= 0.f) {
+	if (w->cursor.y <= 1.f) {
 		w->cursor.y = 1.f;
 	}
 
 	else {
 		printf("cursor up A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
-		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y);
-		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1);
+		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
+		STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-2);
 		if (p->str == NULL) STRING_INIT(p, 10);
 		// else w->cursor.x = p->index-2;
 
 		if (w->cursor.x > p->index) w->cursor.x = p->index-1;
+		w->cursor.y--;
 	
 		w->text = *p;
 		// w->text.index -= 1;
 	}
+	return 1;
 }
 
 int move_down(BIND_FN_PARAMS)
@@ -714,7 +719,7 @@ int move_down(BIND_FN_PARAMS)
 
 	if (w->cursor.y >= w->lines.index) {
 		// w->cursor.y--;
-		w->cursor.y = w->lines.index;
+		// w->cursor.y = w->lines.index;
 	}
 
 	else {
@@ -731,6 +736,7 @@ int move_down(BIND_FN_PARAMS)
 		
 		w->text = *p;
 	}
+	return 1;
 }
 
 int move_left(BIND_FN_PARAMS)
@@ -742,6 +748,7 @@ int move_left(BIND_FN_PARAMS)
 		else w->cursor.x++;
 	}
 	printf("cursor left A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+	return 1;
 }
 
 int move_right(BIND_FN_PARAMS)
@@ -755,6 +762,7 @@ int move_right(BIND_FN_PARAMS)
 	}
 
 	printf("cursor right A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
+	return 1;
 }
 
 int move_start_of_line(BIND_FN_PARAMS)
@@ -793,9 +801,9 @@ WIDGET* create_text_input(const char* text, STYLE* style)
 	WIDGET* text_input = create_widget(0, 0, W_TEXT_INPUT, width, height, text, style);
 	__system_bind_widget(text_input, "<KEYPRESS>", text_input_handle);
 	__system_bind_widget(text_input, "<KEY_BACKSPACE>", text_input_backspace);
-	__system_bind_widget(text_input, "[KEY_ENTER]", text_input_newline);
-	__system_bind_widget(text_input, "[KEY_UP]", move_up);
-	__system_bind_widget(text_input, "[KEY_DOWN]", move_down);
+	__system_bind_widget(text_input, "<KEY_ENTER>", text_input_newline);
+	__system_bind_widget(text_input, "<KEY_UP>", move_up);
+	__system_bind_widget(text_input, "<KEY_DOWN>", move_down);
 	__system_bind_widget(text_input, "<KEY_LEFT>", move_left);
 	__system_bind_widget(text_input, "<KEY_RIGHT>", move_right);
 	__system_bind_widget(text_input, "<KEY_HOME>", move_start_of_line);
@@ -805,6 +813,7 @@ WIDGET* create_text_input(const char* text, STYLE* style)
 	STRING_VECTOR_INIT(&text_input->lines, 10);
 	return text_input;
 }
+
 
 int do_nothing(BIND_FN_PARAMS)
 {
@@ -976,26 +985,26 @@ void draw_widget(WIDGET* w)
 	if (w->type == W_TEXT_INPUT) {
 		_text_pos = text_pos;
 
-		float ht = w->pos.height / w->style->font_size;
-		float hht = hht / 2;
-		int i = hht - ht;
-		
-			printf("i: %d %f %f \n", i, ht, hht);
-		if (w->cursor.y-ht < 1) i = 0;
+		float ht = w->pos.height / (w->style->font_size*2);
+		float hht = ht / 2;
+		int i = -hht;
+		for (i; w->cursor.y+i < 1; i++);
 		
 		for (i; i < ht; i++) {
 			// if (w->pos.y+w->style->font_size*i > w->pos.y + w->pos.height) break;
-			if (w->cursor.y+i > w->lines.index+1) break;
+			if (w->cursor.y-1+i > w->lines.index) break;
 
 			if (i == 0) {
 				DrawTextEx(w->style->font, w->text.str, _text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
+				text_pos = _text_pos;
 			}
+
 			else {
-				STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y+i);
-				// STRING* p = &w->text;
+				STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y-1+i);
 				if (p == NULL || p->str == NULL) break;
 				DrawTextEx(w->style->font, p->str, _text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
 			}
+
 			_text_pos.y += w->style->font_size;
 		}
 		
@@ -1069,7 +1078,7 @@ void draw_gui()
 		WIDGET* w = *val;
 		// w->pos.x = x;
 		// w->pos.y = y;
-		// printf("what: %d %s\n", i, w->text.str);
+		// printf("what: %d %s\n", i, w->text->str);
 		draw_widget(w);
 		if (w->__draw_children) {
 			// printf("drawing for parent: %s\n", w->w_name);
