@@ -117,11 +117,11 @@ int main(void)
 	int currentShader = FX_GRAYSCALE;
 
 	RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
-	SPRITE_LIST* asset_list = load_all_assets(NULL);
+	SPRITE_VECTOR* asset_list = load_all_assets(NULL);
 
 	// Create a RenderTexture2D to be used for render to texture
 	// Image wall_img = LoadImage("gg_wallpaper.png");			 // Load image in CPU memory (RAM)
-	// // ImageResize(&test_img, , 300);
+	// ImageResize(&wall_img, 300, 300);
 	// Texture2D wall_texture = LoadTextureFromImage(wall_img);          // Image converted to texture, GPU memory (VRAM)
 	// UnloadImage(wall_img);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM
 
@@ -150,6 +150,12 @@ int main(void)
 	// Texture2D bed_texture = LoadTextureFromImage(bed);          // Image converted to texture, GPU memory (VRAM)
 	// UnloadImage(bed);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM
 
+	// SPRITE s;
+	// s.tex = bed_texture;
+	// s.src = (Rectangle){.x=0, .y=0, .width=100, .height=100};
+	// s.dst = (Rectangle){.x=0, .y=0, .width=100, .height=100};
+	SPRITE s = create_sprite_from_image("assets/gg_bed.png");
+
 	SetTargetFPS(120);				   // Set our game to run at 60 frames-per-second
 	//--------------------------------------------------------------------------------------
 
@@ -157,7 +163,10 @@ int main(void)
 	// WIDGET* test_child = create_child_widget(test_frame, 
 	WIDGET* test_widget = create_widget(100, 100, W_LABEL, 200, 200, "test", NULL);
 	WIDGET* test_widget1 = create_widget(100, 400, W_LABEL, 200, 200, "test1", NULL);
-	WIDGET* test_widget2 = create_widget(100, 400, W_LABEL, 200, 200, "test3", NULL);
+	WIDGET* test_widget2 = create_widget(100, 400, W_LABEL, 200, 200, "test2", NULL);
+	WIDGET* test_widget3 = create_widget(100, 400, W_LABEL, 200, 200, "test3", NULL);
+	WIDGET* test_widget4 = create_widget(100, 400, W_LABEL, 200, 200, "test4", NULL);
+	WIDGET* test_widget5 = create_widget(100, 400, W_LABEL, 200, 200, "test5", NULL);
 
 
 	WIDGET* test_dropdown = create_dropdown("select sumn", NULL);
@@ -168,10 +177,18 @@ int main(void)
 	add_child_widget(test_frame, test_widget);
 	add_child_widget(test_frame, test_widget1);
 	add_child_widget(test_frame, test_widget2);
+	add_child_widget(test_frame, test_widget3);
+	add_child_widget(test_frame, test_widget4);
+	add_child_widget(test_frame, test_widget5);
 
 	add_widget_to_render_queue(test_frame);
 	add_widget_to_render_queue(test_dropdown);
 	add_widget_to_render_queue(test_text_input);
+
+	// SPRITE s = create_sprite_from_image_f("assets/gg_bed.png", 200, 200);
+	// widget_add_img(test_widget, &s);
+	test_widget->img = &s;
+	// printf("bool: %d\n", &test_widget->img != &EMPTY_SPRITE);
 
 	focus_set(test_text_input);
 	// add_widget_to_render_queue(test_widget);
@@ -186,8 +203,8 @@ int main(void)
 		//----------------------------------------------------------------------------------
 		// UpdateCamera(&camera, CAMERA_ORBITAL);
 
-		// if (IsKeyPressed(KEY_RIGHT)) currentShader++;
-		// else if (IsKeyPressed(KEY_LEFT)) currentShader--;
+		if (IsKeyPressed(KEY_RIGHT)) currentShader++;
+		else if (IsKeyPressed(KEY_LEFT)) currentShader--;
 
 		if (currentShader >= MAX_POSTPRO_SHADERS) currentShader = 0;
 		else if (currentShader < 0) currentShader = MAX_POSTPRO_SHADERS - 1;
@@ -195,15 +212,16 @@ int main(void)
 		event_handle();
 		// Draw
 		// //----------------------------------------------------------------------------------
-		// BeginTextureMode(target);	   // Enable drawing to texture
-			// ClearBackground(RAYWHITE);  // Clear texture background
+		BeginTextureMode(target);	   // Enable drawing to texture
+			ClearBackground(RAYWHITE);  // Clear texture background
+			// DrawTexture(s.tex, 100, 200, WHITE);
 			// // draw_widget(test_widget);
-			// // DrawTexture(wall_texture, 0, 100, WHITE);
+			// DrawTexture(wall_texture, 0, 100, WHITE);
 			// // DrawTexture(wall1_texture, wall_texture.width, 100, WHITE);
-			// // DrawTexturePro(wall1_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){0, 0, 1200, 960}, (Vector2){0, 0}, 0, WHITE);
+			// DrawTexturePro(bed_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){0, 0, 1200, 960}, (Vector2){0, 0}, 0, WHITE);
 			// // DrawTexture(cabinet_texture, cabinet_texture.width, 400, WHITE);
 			// // DrawTexture(painting_texture, 800, 100, WHITE);
-			// // DrawTexture(bed_texture, 500, 200, WHITE);
+			// DrawTexture(bed_texture, 500, 200, WHITE);
 			// // DrawTexturePro(test_texture, (Rectangle){0,0,2048, 2048}, (Rectangle){200, 200, 400, 400}, (Vector2){0, 0}, 0, WHITE);
 			
 			// // DrawTextureRec(test_texture, (Rectangle){ 0, 0, 200, 300 }, (Vector2){ 0, 0 }, WHITE);
@@ -211,22 +229,23 @@ int main(void)
 				// // DrawModel(model, position, 0.1f, WHITE);   // Draw 3d model with texture
 				// // DrawGrid(10, 1.0f);	 // Draw a grid
 			// // EndMode3D();				// End 3d mode drawing, returns to orthographic 2d mode
-		// EndTextureMode();			   // End drawing to texture (now we have a texture available for next passes)
+		EndTextureMode();			   // End drawing to texture (now we have a texture available for next passes)
 		
 		BeginDrawing();
 			ClearBackground(RAYWHITE);  // Clear screen background
 			// DrawTexture(test_texture, screenWidth/2 - texture.width/2, screenHeight/2 - texture.height/2, WHITE);
 			
 			// Render generated texture using selected postprocessing shader
-			// BeginShaderMode(shaders[currentShader]);
-				// // NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
-				// DrawTextureRec(target.texture, (Rectangle){ 0, 0, (float)target.texture.width, (float)-target.texture.height }, (Vector2){ 0, 0 }, WHITE);
-			// EndShaderMode();
+			BeginShaderMode(shaders[currentShader]);
+				// NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
+				DrawTextureRec(target.texture, (Rectangle){ 0, 0, (float)target.texture.width, (float)-target.texture.height }, (Vector2){ 0, 0 }, WHITE);
+			EndShaderMode();
 
 			// Draw 2d shapes and text over drawn texture
 			DrawRectangle(0, 9, 580, 30, Fade(LIGHTGRAY, 0.7f));
+			// draw_sprite(&s);
 
-			DrawText("(c) Church 3D model by Alberto Cano", screenWidth - 200, screenHeight - 20, 10, GRAY);
+			DrawText("(c) nuwa", screenWidth - 200, screenHeight - 20, 10, GRAY);
 			DrawText("CURRENT POSTPRO SHADER:", 10, 15, 20, BLACK);
 			DrawText(postproShaderText[currentShader], 330, 15, 20, RED);
 			DrawText("< >", 540, 10, 30, DARKBLUE);
@@ -238,9 +257,10 @@ int main(void)
 			DrawText(__EVENT_ALL, 500, 300, 20, BLACK);
 			sprintf(text_pos_buf, "[%d:%d]", (int)test_text_input->cursor.y, (int)test_text_input->cursor.x);
 			DrawText(text_pos_buf, 500, 320, 20, BLACK);
-			
+
 
 			draw_gui();
+			// DrawTexture(s.tex, 100, 200, WHITE);
 
 			// draw_widget(test_widget);
 			// draw_widget(test_widget1);
@@ -257,6 +277,7 @@ int main(void)
 
 	// UnloadTexture(test_texture);		 // Unload texture
 	// UnloadTexture(texture);		 // Unload texture
+	unload_sprite(&s);
 	unload_all_assets(asset_list);
 	// UnloadModel(model);			 // Unload model
 	UnloadRenderTexture(target);	// Unload render texture

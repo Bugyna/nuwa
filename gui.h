@@ -17,6 +17,9 @@
 #define GUI_H_
 
 
+SPRITE EMPTY_SPRITE = (SPRITE){0};
+SPRITE* EMPTY_SPRITE_PTR = &EMPTY_SPRITE;
+
 typedef enum
 {
 	W_WINDOW=0,
@@ -48,6 +51,7 @@ const char* widget_type_as_str(WIDGET_TYPE type)
 }
 
 typedef struct STYLE STYLE;
+typedef struct GRID GRID;
 typedef struct WIDGET WIDGET;
 
 typedef struct BINDING BINDING;
@@ -83,6 +87,34 @@ typedef enum
 } TEXT_JUSTIFY;
 
 
+typedef enum
+{
+	GRID_FILL=-1,
+	GRID_AUTO=-2,
+	GRID_=-3,
+} GRID_PARAMS;
+
+struct GRID
+{
+	int row_count;
+	int cell_count;
+
+	int max_row_width;
+	int max_row_height;
+
+	int row_width;
+	int row_height;
+
+	int max_cell_width;
+	int max_cell_height;
+	
+	int cell_width;
+	int cell_height;
+
+	int min_cell_width;
+	int min_cell_height;
+};
+
 struct STYLE
 {
 	Font font;
@@ -100,6 +132,11 @@ struct STYLE
 
 	SPRITE bg_img;
 	SPRITE border_img;
+
+
+	// Positioning
+	bool use_grid;
+	GRID grid;
 	
 	
 };
@@ -150,6 +187,8 @@ struct WIDGET
 
 	BINDING_MAP binding_map;
 
+	SPRITE* img;
+
 	
 	// union 
 	// {
@@ -168,6 +207,7 @@ WIDGET __WINDOW_WIDGET = {
 	.style = &DEFAULT_STYLE,
 	.text = (STRING){.str="", .index=0, .available=0},
 	.pos = (Rectangle){.x=0, .y=0, .width=0, .height=0},
+	.img = &EMPTY_SPRITE,
 	
 };
 
@@ -473,9 +513,12 @@ WIDGET* create_widget(int x, int y, WIDGET_TYPE type, int width, int height, con
 	
 	// w->binding_map = calloc(1, sizeof(BINDING_MAP));
 	BINDING_MAP_INIT(&w->binding_map, 20);
+
+
 	w->pos = (Rectangle){
 		.x = x, .y = y,
-		.width = width, .height = height
+		.width = width,
+		.height = height,
 	};
 
 	size_t len = strlen(text);
@@ -492,6 +535,8 @@ WIDGET* create_widget(int x, int y, WIDGET_TYPE type, int width, int height, con
 	if (style == NULL) style = &DEFAULT_STYLE;
 	w->style = style;
 
+	w->img = &EMPTY_SPRITE;
+
 	__system_bind_widget(w, "[MOUSE_BUTTON_LEFT]", __focus_set);
 	__system_bind_widget(w, "<MOUSE_BUTTON_LEFT><MOUSE_MOVE>", test_drag);
 	__system_bind_widget(w, "<MOUSE_BUTTON_RIGHT><MOUSE_MOVE>", test_drag_x);
@@ -507,6 +552,12 @@ void add_child_widget(WIDGET* parent, WIDGET* w)
 {
 	w->__parent = parent;
 	WIDGET_PTR_VECTOR_ADD(&parent->__children, w);
+}
+
+
+void widget_add_img(WIDGET* w, SPRITE* s)
+{
+	w->img = s;
 }
 
 
@@ -664,7 +715,6 @@ int text_input_newline(BIND_FN_PARAMS)
 		printf("xx: %d, %d\n", p.index, w->text.index-(int)w->cursor.x);
 		STRING_MERGE_F(&p, &w->text, w->cursor.x);
 
-		w->cursor.y++;
 
 		// STRING_ADD(&w->text, '\0');
 		memset(w->text.str + ((int)w->cursor.x), '\0', w->text.available-(int)w->text.index);
@@ -673,9 +723,10 @@ int text_input_newline(BIND_FN_PARAMS)
 		w->text.index = w->cursor.x;
 		printf("text: %s %d\n", w->text.str, w->text.index);
 		STRING_ADD(&w->text, '\n');
-		STRING_VECTOR_REPLACE(&w->lines, w->text, w->cursor.y-1);
+		STRING_VECTOR_INSERT(&w->lines, w->text, w->cursor.y-1);
+		w->cursor.y++;
 
-		STRING_VECTOR_INSERT(&w->lines, p, w->cursor.y);
+		// STRING_VECTOR_INSERT(&w->lines, p, w->cursor.y);
 
 		w->cursor.x = 0;
 		w->text = p;
@@ -1023,6 +1074,24 @@ void draw_widget(WIDGET* w)
 	else {
 		DrawTextEx(w->style->font, line, text_pos, w->style->font_size, w->style->font_spacing, w->style->fg);
 	}
+
+	// if (&w->style->bg_img != &EMPTY_SPRITE)
+	// {
+		// w->style->bg_img.dst = w->pos;
+		// draw_sprite(&w->style->bg_img);
+	// }
+
+	if (w->img != &EMPTY_SPRITE)
+	{
+		// printf("Drawing image: %s\n", w->w_name);
+		w->img->dst = w->pos;
+		if (w->pos.width < 0.f || w->pos.height < 0.f) printf("\nWHAT\n");
+		w->img->src.width = w->pos.width;
+		w->img->src.width = w->pos.height;
+		// w->img->dst.x = w->pos.x;
+		// w->img->dst.y = w->pos.y;
+		draw_sprite(w->img);
+	}
 	
 	if (w->style->border_style == BORDER_SOLID)
 		DrawRectangleLinesEx(w->pos, w->style->border_size, w->style->border_color);
@@ -1068,6 +1137,83 @@ void __draw_gui_pack_vertical(WIDGET* parent, int x, int y)
 	}
 }
 
+
+void __draw_gui_grid(WIDGET* parent, int x, int y)
+{
+
+	int row_height = 0;
+	int width, height;
+	float _c = -1, _cc = -1, _r = -1;
+	int x_offset = 0, y_offset = 0;
+
+	if (parent->style->grid.row_width == GRID_AUTO) {
+		width = parent->pos.width / parent->__children.index;
+		
+		if (width < parent->style->grid.min_cell_width) {
+			width = parent->style->grid.min_cell_width;
+		}
+
+		else if (width > parent->style->grid.max_cell_width) {
+			width = parent->style->grid.max_cell_width;
+		}
+	}
+
+	else {
+		width = parent->style->grid.row_width / parent->__children.index;
+	}
+
+	_c = floor(parent->pos.width / width);
+	x_offset = (parent->pos.width - (width * _c)) / _c;
+
+	_r = ceil(parent->__children.index / _c);
+	// printf("r: %f %f\n", _r, _c);
+
+
+	if (parent->style->grid.row_height == GRID_AUTO) {
+		height = parent->pos.height / _r;
+		if (height < parent->style->grid.min_cell_width) {
+			height = parent->style->grid.min_cell_height;
+		}
+		else if (height > parent->style->grid.max_cell_height) {
+			height = parent->style->grid.max_cell_height;
+		}
+		
+	}
+
+	else
+		height = parent->style->grid.row_height;
+
+	_cc = parent->pos.height / height;
+	y_offset = (parent->pos.height - (height * _r)) / _cc;
+
+	// printf("offset: %d %d %f %d  height: %f %d\n", x_offset, y_offset, parent->pos.width, width, parent->pos.height, height);
+	// y += y_offset;
+
+	ITERATE_VECTOR(parent->__children, WIDGET*, val)
+	{
+		WIDGET* w = *val;
+		if (x+width > parent->pos.x + parent->pos.width) {
+			// printf("hapadwj\n");
+			x = parent->pos.x;
+			y += height + y_offset;
+		}
+
+		// if (row_height < w->pos.height) row_height = w->pos.height;
+		w->pos.x = x + (w->style->margin / 2) + x_offset / 2;
+		w->pos.y = y + w->style->margin / 2 + y_offset / 2;
+		w->pos.width = width - w->style->margin / 2 - x_offset / 2;
+		w->pos.height = height - w->style->margin;
+		// printf("what: %d %s %s\n", parent->pos.height/w->__children.index, w->w_name, parent->w_name);
+		draw_widget(w);
+		// if (w->__draw_children) {
+			// __draw_gui(w, x, y);
+		// }
+		x += w->pos.width + w->style->margin + x_offset;
+		// y += w->pos.height;
+		
+	}
+}
+
 void draw_gui()
 {
 	// int x = 100;
@@ -1083,6 +1229,7 @@ void draw_gui()
 		if (w->__draw_children) {
 			// printf("drawing for parent: %s\n", w->w_name);
 			if (w->type ==  W_DROPDOWN) __draw_gui_pack_vertical(w, w->pos.x, w->pos.y+w->pos.height);
+			else if (w->style->use_grid) __draw_gui_grid(w, w->pos.x, w->pos.y);
 			else __draw_gui_pack_horizontal(w, w->pos.x, w->pos.y);
 		}
 		// x = w->pos.x + w->pos.width;

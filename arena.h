@@ -90,7 +90,10 @@ TYPE* NAME##_INSERT(NAME* vec, TYPE p, size_t index)                            
 	if (vec->index+1 >= vec->available) {                               \
 		NAME##_REALLOC(vec, vec->available*2);                         \
 	}                                                                 \
-	memcpy(vec->items + index + 1, vec->items + index, vec->index - index);  \
+	for (int i = vec->index; i > index+1; i--) {\
+		printf("wahtat: %d\n", i);\
+		vec->items[i] = vec->items[i-1];\
+	}\
 	vec->items[index] = p;                                            \
 	return &vec->items[vec->index-1];                                   \
 }                                                                    \
@@ -135,8 +138,7 @@ void NAME##_POP(NAME* vec)                                           \
 }                                                                    \
 TYPE* NAME##_GET(NAME* vec, size_t index)                            \
 {                                                                    \
-	if (index+1 > vec->index) return NAME##_ADD(vec, (TYPE){0});               \
-	printf(#NAME ": GET %d\n", index);                                  \
+	if (index+1 > vec->index) return NULL;               \
 	return &vec->items[index];                                          \
 }                                                                    \
 void NAME##_SET(NAME* vec, TYPE* val, size_t index)                  \

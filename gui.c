@@ -18,7 +18,7 @@ void init_gui_system(int width, int height)
 		.font = DEFAULT_GUI_FONT,
 		.font_size = 16,
 		.font_spacing = 1,
-		.bg = WHITE,
+		.bg = BLANK,
 		.fg = BLACK,
 		.padding = 0,
 		.margin = 0,
@@ -28,22 +28,32 @@ void init_gui_system(int width, int height)
 		.border_size = 2,
 		.bg_img = (SPRITE){},
 		.border_img = (SPRITE){},
+		.use_grid = true,
+		.grid = (GRID){
+			.row_width=GRID_AUTO,
+			.row_height=GRID_AUTO,
+			.min_cell_width=120,
+			.min_cell_height=120,
+			.max_cell_width=150,
+			.max_cell_height=180,
+		},
 	};
 
 	DEFAULT_STYLE = (STYLE){
 		.font = DEFAULT_GUI_FONT,
 		.font_size = 16,
 		.font_spacing = 1,
-		.bg = WHITE,
+		.bg = BLANK,
 		.fg = BLACK,
 		.padding = 3,
-		.margin = 0,
+		.margin = 10,
 		.text_justify = JUSTIFY_LEFT,
 		.border_style = BORDER_SOLID,
 		.border_color = BLACK,
 		.border_size = 1,
-		.bg_img = (SPRITE){},
-		.border_img = (SPRITE){},
+		.bg_img = EMPTY_SPRITE,
+		.border_img = EMPTY_SPRITE,
+		.use_grid = false,
 	};
 
 	DEFAULT_STYLE1 = (STYLE){
@@ -58,8 +68,9 @@ void init_gui_system(int width, int height)
 		.border_style = BORDER_SOLID,
 		.border_color = BLUE,
 		.border_size = 1,
-		.bg_img = (SPRITE){},
-		.border_img = (SPRITE){},
+		.bg_img = (SPRITE){0},
+		.border_img = (SPRITE){0},
+		.use_grid = false,
 	};
 
 
@@ -77,6 +88,7 @@ void init_gui_system(int width, int height)
 		.border_size = 1,
 		.bg_img = (SPRITE){},
 		.border_img = (SPRITE){},
+		.use_grid = false,
 	};
 	
 	WIDGET_VECTOR_INIT(&__widgets, 40);

@@ -17,7 +17,7 @@
 
 typedef struct
 {
-	Image img;
+	const char* path;
 	Texture2D tex;
 	Rectangle src, dst;
 	Vector2 cosi;
@@ -57,28 +57,74 @@ void draw_layer(LAYER* l)
 SPRITE create_sprite_from_image(const char* path)
 {
 	SPRITE s;
-	s.img = LoadImage(path);
-	s.tex = LoadTextureFromImage(s.img);
+	s.path = path;
+	Image img = LoadImage(path);
+	s.tex = LoadTextureFromImage(img);
+
+	s.cosi = (Vector2){.x=0, .y=0};
+
+	s.dst = (Rectangle){
+		.x = 0.f,
+		.y = 0.f,
+		.width = s.tex.width,
+		.height = s.tex.height,
+	};
+
+	s.src = (Rectangle){
+		.x = 0.f,
+		.y = 0.f,
+		.width = s.tex.width,
+		.height = s.tex.height,
+	};
+	UnloadImage(img);
+	return s;
 }
 
 
-SPRITE create_sprite_from_image_f(const char* path, int w, int h)
+SPRITE create_sprite_from_image_f(const char* path, float w, float h)
 {
 	SPRITE s;
-	s.img = LoadImage(path);
-	ImageResize(&s.img, w, h);
-	s.tex = LoadTextureFromImage(s.img);
-	// UnloadImage(s.img);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM
+	s.path = path;
+	s.cosi = (Vector2){.x=0, .y=0};
+	Image img = LoadImage(path);
+	ImageResize(&
+	img, w, h);
+	s.tex = LoadTextureFromImage(img);
+
+	// printf("SPRITE: %f %f\n", s.tex.width, s.tex.height);
+	s.dst = (Rectangle){
+		.x = 0,
+		.y = 0,
+		.width = w,
+		.height = h,
+	};
+
+	s.src = (Rectangle){
+		.x = 0,
+		.y = 0,
+		.width = w,
+		.height = h,
+	};
+	UnloadImage(img);   // Once image has been converted to texture and uploaded to VRAM, it can be unloaded from RAM
+	return s;
 }
 
 void unload_sprite(SPRITE* s)
 {
-	UnloadImage(s->img);
+	// UnloadImage(s->img);
 	UnloadTexture(s->tex);
+}
+
+void draw_sprite_simple(SPRITE* s)
+{
+	// printf("Drawing image %f %f %f %f %f %f %f %f\n", s->dst.x, s->dst.y, s->dst.width, s->dst.height, s->src.width, s->src.height, s->tex.width, s->tex.height);
+	// printf("Drawing image %f %f %f %f %f %f\n", s->dst.x, s->dst.y, s->dst.width, s->dst.height, s->tex.width, s->tex.height);
+	DrawTexture(s->tex, s->dst.x, s->dst.y, WHITE);
 }
 
 void draw_sprite(SPRITE* s)
 {
+	// printf("Drawing image %f %f %f %f %f %f %f %f\n", s->dst.x, s->dst.y, s->dst.width, s->dst.height, s->src.width, s->src.height, s->tex.width, s->tex.height);
 	DrawTexturePro(s->tex, s->src, s->dst, s->cosi, 0, WHITE);
 }
 
