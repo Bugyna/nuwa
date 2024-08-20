@@ -222,6 +222,7 @@ WIDGET* EMPTY_WIDGET;
 WIDGET* __WIDGET_FOCUS = &__WINDOW_WIDGET;
 WIDGET* __WIDGET_ATTENTION = &__WINDOW_WIDGET;
 WIDGET* __WIDGET_LOCK = &__WINDOW_WIDGET;
+WIDGET* __WIDGET_LOCK1 = &__WINDOW_WIDGET;
 DEFINE_HASHMAP(WIDGET_MAP, WIDGET)
 
 
@@ -473,6 +474,67 @@ int test_resize(BIND_FN_PARAMS)
 	return 1;
 }
 
+int resize_x(BIND_FN_PARAMS)
+{
+	if (e.mouse_wheel_move > 0) {
+		w->pos.width += 10;
+	}
+
+	else {
+		w->pos.width -= 10;
+	}
+	return 1;
+}
+
+int resize_edge(BIND_FN_PARAMS)
+{
+	bool resize_x = false;
+	bool resize_y = false;
+	bool fx = false;
+	bool fy = false;
+
+	int limit = 30;
+
+	printf("DRAG START POS: %f.%f\n", e.drag_pos.x, e.drag_pos.y);
+	// e.mouse_pos = GetMousePosition();
+	// printf("here %f %f\n", e.last_mouse_pos.x, w->pos.x+w->pos.width);
+	
+	// if (w != __WIDGET_LOCK && w == __WIDGET_ATTENTION) return 0;
+	if (w != __WIDGET_LOCK1 && e.drag_pos.x > w->pos.x + limit && e.drag_pos.x < w->pos.x+w->pos.width - limit) { printf("returning\n"); return 0; }
+
+	// if (w != __WIDGET_LOCK) limit = 15;
+
+	// if (w != __WIDGET_LOCK) {
+		if (e.mouse_pos.x >= w->pos.x - limit && e.mouse_pos.x <= w->pos.x + limit) resize_x = true;
+		else if (e.mouse_pos.x > w->pos.x + w->pos.width - limit && e.mouse_pos.x <= w->pos.x + w->pos.width + limit) {resize_x = true; fx = true;}
+		
+		if (e.mouse_pos.y >= w->pos.y - limit && e.mouse_pos.y <= w->pos.y + limit) resize_y = true;
+		else if (e.mouse_pos.y >= w->pos.y + w->pos.height - limit && e.mouse_pos.y <= w->pos.y + w->pos.height + limit) { resize_y = true; fy = true; }
+	// }
+
+	// else {
+		// if (e.mouse_pos.x <= w->pos.x) resize_x = true;
+		// else if (e.mouse_pos.x >= w->pos.x) {resize_x = true; fx = true;}
+		
+		// if (e.mouse_pos.y <= w->pos.y) resize_y = true;
+		// else if (e.mouse_pos.y >= w->pos.y + w->pos.height) { resize_y = true; fy = true; }
+	// }
+
+	if (resize_x) {
+		if (fx) w->pos.width = e.mouse_pos.x - w->pos.x;
+		else { w->pos.width -= e.mouse_pos.x - w->pos.x; w->pos.x = e.mouse_pos.x; }
+	}
+
+	if (resize_y) {
+		if (fy) w->pos.height = e.mouse_pos.y - w->pos.y;
+		else { w->pos.height -= e.mouse_pos.y - w->pos.y; w->pos.y = e.mouse_pos.y; }
+	}
+	printf("resize_x: %d, resize_y: %d %d %d\n", resize_x, resize_y, fx, fy);
+	printf("resize_x: %f, resize_y: %f\n", w->pos.x, w->pos.y);
+	printf("resize_x: %f, resize_y: %f\n", e.mouse_pos.x, e.mouse_pos.y);
+	return (bool)(resize_x | resize_y);
+}
+
 char* __create_widget_name(WIDGET_TYPE type)
 {
 	const char* type_name = widget_type_as_str(type);
@@ -567,6 +629,8 @@ WIDGET* create_frame(int width, int height, STYLE* style)
 	WIDGET* frame = create_widget(0, 0, W_FRAME, width, height, "", style);
 	WIDGET_PTR_VECTOR_INIT(&frame->__children, 10);
 	frame->__draw_children = true;
+	bind_widget(frame, "<KEY_LEFT_SHIFT><MOUSE_WHEEL_MOVE>", resize_x);
+	__system_bind_widget(frame, "<MOUSE_BUTTON_LEFT><MOUSE_MOVE>", resize_edge);
 	return frame;
 }
 

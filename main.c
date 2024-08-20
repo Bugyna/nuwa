@@ -254,9 +254,10 @@ int main(void)
 			DrawText(__WIDGET_FOCUS->w_name, 500, 200, 20, BLACK);
 			DrawText(__WIDGET_ATTENTION->w_name, 500, 240, 20, BLACK);
 			DrawText(__WIDGET_LOCK->w_name, 500, 280, 20, BLACK);
-			DrawText(__EVENT_ALL, 500, 300, 20, BLACK);
+			DrawText(__WIDGET_LOCK1->w_name, 500, 320, 20, BLACK);
+			DrawText(__EVENT_ALL, 500, 360, 20, BLACK);
 			sprintf(text_pos_buf, "[%d:%d]", (int)test_text_input->cursor.y, (int)test_text_input->cursor.x);
-			DrawText(text_pos_buf, 500, 320, 20, BLACK);
+			DrawText(text_pos_buf, 500, 400, 20, BLACK);
 
 
 			draw_gui();

@@ -23,7 +23,12 @@ char __EVENT_ALL[300] = {};
 
 bool __BUTTONS_CURRENTLY_HELD[6] = {0, 0, 0, 0, 0};
 
-Vector2 __LAST_MOUSE_POSITION = {.x=-1, .y=-1};
+Vector2 __LAST_MOUSE_POS = {.x=-1, .y=-1};
+
+Vector2 __DRAG_START_POS = {.x=-1, .y=-1};
+
+bool __MOUSE_MOVING = false;
+bool __MOUSE_DRAGGING = false;
 
 static int __CHARS_BUFFER[150];
 int __CHARS_BUFFER_INDEX = 0;
@@ -50,8 +55,11 @@ typedef struct
 	Vector2 mouse_pos_rel;
 	Vector2 mouse_delta_rel;
 	float mouse_wheel_move;
+	Vector2 last_mouse_pos;
 
 	int char_held;
+
+	Vector2 drag_pos;
 	
 } EVENT;
 

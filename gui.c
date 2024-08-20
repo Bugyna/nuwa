@@ -101,10 +101,11 @@ void init_gui_system(int width, int height)
 	EMPTY_WIDGET->w_name = "!!EMPTY";
 
 	
-	__system_bind_widget(WINDOW_WIDGET, "<MOUSE_BUTTON_LEFT>", __focus_set);
+	__system_bind_widget(WINDOW_WIDGET, "[MOUSE_BUTTON_LEFT]", __focus_set);
 	__system_bind_widget(WINDOW_WIDGET, "<WINDOW_RESIZED>", __window_handle_resize);
 
 	__WIDGET_FOCUS = WINDOW_WIDGET;
 	__WIDGET_ATTENTION = WINDOW_WIDGET;
 	__WIDGET_LOCK = EMPTY_WIDGET;
+	__WIDGET_LOCK1 = EMPTY_WIDGET;
 }

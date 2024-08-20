@@ -334,7 +334,7 @@ const char* event_handle_keyboard()
 }
 
 
-const char* event_handle_mouse()
+const char* event_handle_mouse(bool mouse_move)
 {
 	// char __EVENT_BUTTONS[100] = {'\0'};
 	memset(__EVENT_BUTTONS, 0, 150);
@@ -346,11 +346,16 @@ const char* event_handle_mouse()
 				strcat(__EVENT_BUTTONS, "]");
 			}
 
-			else {
+			else if (mouse_move) {
 				strcat(__EVENT_BUTTONS, "<");
 				strcat(__EVENT_BUTTONS, get_mouse_button_name(i));
 				strcat(__EVENT_BUTTONS, ">");
 			}
+		}
+		else if (__BUTTONS_CURRENTLY_HELD[i]) {
+			strcat(__EVENT_BUTTONS, "(");
+			strcat(__EVENT_BUTTONS, get_mouse_button_name(i));
+			strcat(__EVENT_BUTTONS, ")");
 		}
 		__BUTTONS_CURRENTLY_HELD[i] = IsMouseButtonDown(i);
 	}
@@ -372,19 +377,70 @@ const char* event_handle_mouse()
 
 void event_handle()
 {
-	const char* keys = event_handle_keyboard();
-	const char* buttons = event_handle_mouse();
 	bool mouse_move = false;
 	
 	// Vector2 mouse_delta = GetMouseDelta();
 	float mouse_wheel = GetMouseWheelMove();
 	Vector2 mouse_position = GetMousePosition();
+
+
+	if (mouse_position.x != __LAST_MOUSE_POS.x || mouse_position.y != __LAST_MOUSE_POS.y) {
+		// printf("<MOUSE_MOVE> %f.%f\n", mouse_position.x, mouse_position.y);
+		mouse_move = true;
+	}
+
+
+	const char* keys = event_handle_keyboard();
+	const char* buttons = event_handle_mouse(mouse_move);
 	
+
+	memset(__EVENT_ALL, 0, 300);
+	strcpy(__EVENT_ALL, __EVENT_KEYS);
+	
+	if (mouse_wheel) {
+		strcat(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
+		// TODO: mouse_wheel event
+		// printf("wheel: %f\n", mouse_wheel);
+	}
+
+
+
+	__EVENT_MOUSE = __EVENT_ALL+strlen(__EVENT_ALL);
+	strcpy(__EVENT_MOUSE, __EVENT_BUTTONS);
+
+
+
+
+	if (mouse_move) {
+		strcpy(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_MOVE>");
+
+		
+		if (!__MOUSE_DRAGGING && __BUTTONS_CURRENTLY_HELD[0]) {
+			__DRAG_START_POS = mouse_position;
+			__MOUSE_DRAGGING = true;
+			// printf("drag\n");
+		}
+		else if (!__BUTTONS_CURRENTLY_HELD[0]) {
+			__DRAG_START_POS = (Vector2){.x=0, .y=0};
+			__MOUSE_DRAGGING = false;
+		}
+
+		__MOUSE_MOVING = true;
+
+	}
+
+	else if (__EVENT_ALL[0] != 0) {
+		__MOUSE_MOVING = false;
+	}
+
+
+
+
 	EVENT e = (EVENT){
 		.mouse_pos = mouse_position,
 		.mouse_delta = (Vector2){
-			.x = mouse_position.x - __LAST_MOUSE_POSITION.x,
-			.y = mouse_position.y - __LAST_MOUSE_POSITION.y
+			.x = mouse_position.x - __LAST_MOUSE_POS.x,
+			.y = mouse_position.y - __LAST_MOUSE_POS.y
 		},
 		
 		.mouse_pos_rel = (Vector2){
@@ -393,37 +449,24 @@ void event_handle()
 		},
 
 		.mouse_delta_rel = (Vector2){
-			.x = abs(__WIDGET_FOCUS->pos.x - __LAST_MOUSE_POSITION.x),
-			.y = abs(__WIDGET_FOCUS->pos.y - __LAST_MOUSE_POSITION.y)
+			.x = abs(__WIDGET_FOCUS->pos.x - __LAST_MOUSE_POS.x),
+			.y = abs(__WIDGET_FOCUS->pos.y - __LAST_MOUSE_POS.y)
 		},
 
 		.mouse_wheel_move = mouse_wheel,
 
 		.char_held = __CHARS_BUFFER[__CHARS_BUFFER_INDEX-1],
-		
+		.last_mouse_pos = __LAST_MOUSE_POS,
+		.drag_pos = __DRAG_START_POS,
 	};
-	
-	memset(__EVENT_ALL, 0, 300);
-	strcpy(__EVENT_ALL, __EVENT_KEYS);
-	
-	if (mouse_wheel) {
-		strcat(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
-		// TODO: mouse_wheel event
-		// printf("wheel: %f\n", mouse_wheel);
-		
-	}
 
-
+	
+	__LAST_MOUSE_POS = mouse_position;
+	
+	
+	
+	
 	WIDGET* last_attention = __WIDGET_ATTENTION;
-	__EVENT_MOUSE = __EVENT_ALL+strlen(__EVENT_ALL);
-	strcpy(__EVENT_MOUSE, __EVENT_BUTTONS);
-	// if (mouse_delta.x || mouse_delta.y) {
-	if (mouse_position.x != __LAST_MOUSE_POSITION.x || mouse_position.y != __LAST_MOUSE_POSITION.y) {
-		// printf("<MOUSE_MOVE> %f.%f\n", mouse_position.x, mouse_position.y);
-		mouse_move = true;
-		__LAST_MOUSE_POSITION = mouse_position;
-		strcpy(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_MOVE>");
-	}
 
 
 	__WIDGET_ATTENTION = WINDOW_WIDGET;
@@ -452,19 +495,27 @@ void event_handle()
 		execute_widget_bind(WINDOW_WIDGET, "<WINDOW_RESIZED>", e);
 	}
 
+
 	// execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 	
 	if (__WIDGET_FOCUS != __WIDGET_ATTENTION && (!mouse_move || __WIDGET_FOCUS != __WIDGET_LOCK)) {
 		int ret = 0;
 		ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
-		ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_MOUSE, e);
+		// ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_MOUSE, e);
 		
 		
 		execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 		execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS_JUST_PRESSED, e);
 		if (strcmp(__EVENT_KEYS, __EVENT_ALL) != 0) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
 		// ret |= execute_widget_bind(__WIDGET_ATTENTION, __EVENT_ALL, e);
-		// if (ret) __WIDGET_LOCK = __WIDGET_FOCUS;
+		if (ret && mouse_move) {
+			__WIDGET_LOCK = __WIDGET_FOCUS;
+			__WIDGET_LOCK1 = __WIDGET_FOCUS;
+		}
+		else {
+			__WIDGET_LOCK = EMPTY_WIDGET;
+			// __WIDGET_LOCK1 = __WIDGET_FOCUS;
+		}
 	}
 	
 	else if (__WIDGET_FOCUS == __WIDGET_ATTENTION || (mouse_move && __WIDGET_FOCUS == __WIDGET_LOCK)) {
@@ -474,8 +525,16 @@ void event_handle()
 		ret = execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 		execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS_JUST_PRESSED, e);
 		if (strcmp(__EVENT_KEYS, __EVENT_ALL) != 0) execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS, e);
-		__WIDGET_LOCK = EMPTY_WIDGET;
-		if (mouse_move && ret) __WIDGET_LOCK = __WIDGET_FOCUS;
+		// __WIDGET_LOCK = EMPTY_WIDGET;
+		if (mouse_move && ret) {
+			__WIDGET_LOCK = __WIDGET_FOCUS;
+			__WIDGET_LOCK1 = __WIDGET_FOCUS;
+		}
+
+		else {
+			__WIDGET_LOCK = EMPTY_WIDGET;
+			__WIDGET_LOCK1 = EMPTY_WIDGET;
+		}
 	}
 
 	if (__CHARS_BUFFER[0] != '\0') {
@@ -499,7 +558,7 @@ void event_handle()
 	
 	
 	if (__EVENT_ALL[0]) {
-		// printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+		printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
 	// printf("all: %s\n", __CHARS_BUFFER);
 		// printf("FLUSH\n\n\n");
 	}
