@@ -501,6 +501,7 @@ void event_handle()
 	
 	if (__WIDGET_FOCUS != __WIDGET_ATTENTION && (!mouse_move || __WIDGET_FOCUS != __WIDGET_LOCK)) {
 		int ret = 0;
+		if (mouse_move) execute_widget_bind(__WIDGET_ATTENTION, "<MOUSE_MOVE>", e);
 		ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
 		// ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_MOUSE, e);
 		

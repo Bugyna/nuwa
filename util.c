@@ -24,5 +24,29 @@ Vector2 get_relative_pos_PointRec(Vector2 p, Rectangle r)
 
 
 
+void draw_grid(Rectangle pos, int size, Color fg)
+{
+	int y = 0;
+	for (int x = 0; x <= pos.width; x += size) {
+		DrawLine(x+pos.x, pos.y, x+pos.x, pos.y+pos.height, fg);
+		for (y; y <= pos.height; y += size) {
+			DrawLine(pos.x+x, y+pos.y, pos.x+pos.width, y+pos.y, fg);
+		}
+	}
+}
+
+void draw_grid_bg(Rectangle pos, int size, Color bg, Color fg)
+{
+	DrawRectangleRec(pos, bg);
+	int y = 0;
+	for (int x = 0; x <= pos.width; x += size) {
+		DrawLine(x+pos.x, pos.y, x+pos.x, pos.y+pos.height, fg);
+		for (y; y <= pos.height; y += size) {
+			DrawLine(pos.x+x, y+pos.y, pos.x+pos.width, y+pos.y, fg);
+		}
+	}
+}
+
+
 
 #endif

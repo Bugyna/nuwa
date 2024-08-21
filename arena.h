@@ -134,7 +134,7 @@ void NAME##_DELETE(NAME* vec, TYPE ptr)                              \
 }                                                                    \
 void NAME##_POP(NAME* vec)                                           \
 {                                                                    \
-	NAME##_REMOVE(vec, vec->index);                                   \
+	NAME##_REMOVE(vec, vec->index-1);                                   \
 }                                                                    \
 TYPE* NAME##_GET(NAME* vec, size_t index)                            \
 {                                                                    \

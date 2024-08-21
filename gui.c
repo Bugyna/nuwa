@@ -39,6 +39,23 @@ void init_gui_system(int width, int height)
 		},
 	};
 
+	DEFAULT_FRAME_STYLE1 = (STYLE){
+		.font = DEFAULT_GUI_FONT,
+		.font_size = 16,
+		.font_spacing = 1,
+		.bg = DARKGRAY,
+		.fg = BLACK,
+		.padding = 0,
+		.margin = 0,
+		.text_justify = JUSTIFY_LEFT,
+		.border_style = BORDER_SOLID,
+		.border_color = MAGENTA,
+		.border_size = 2,
+		.bg_img = (SPRITE){},
+		.border_img = (SPRITE){},
+		.use_grid = false,
+	};
+
 	DEFAULT_STYLE = (STYLE){
 		.font = DEFAULT_GUI_FONT,
 		.font_size = 10,
