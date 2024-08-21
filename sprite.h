@@ -17,7 +17,7 @@
 
 typedef struct
 {
-	const char* path;
+	char* path;
 	Texture2D tex;
 	Rectangle src, dst;
 	Vector2 cosi;
@@ -54,10 +54,11 @@ void draw_layer(LAYER* l)
 
 
 
-SPRITE create_sprite_from_image(const char* path)
+SPRITE create_sprite_from_image(char* path)
 {
 	SPRITE s;
-	s.path = path;
+	s.path = malloc(strlen(path));
+	strcpy(s.path, path);
 	Image img = LoadImage(path);
 	s.tex = LoadTextureFromImage(img);
 
@@ -81,10 +82,12 @@ SPRITE create_sprite_from_image(const char* path)
 }
 
 
-SPRITE create_sprite_from_image_f(const char* path, float w, float h)
+SPRITE create_sprite_from_image_f(char* path, float w, float h)
 {
 	SPRITE s;
-	s.path = path;
+	s.path = malloc(strlen(path));
+	strcpy(s.path, path);
+
 	s.cosi = (Vector2){.x=0, .y=0};
 	Image img = LoadImage(path);
 	ImageResize(&

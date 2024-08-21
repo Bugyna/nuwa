@@ -13,7 +13,7 @@
 #define ASSETS_H_
 
 
-SPRITE_VECTOR* load_all_assets(const char*);
+SPRITE_VECTOR load_all_assets(const char*);
 void unload_all_assets(SPRITE_VECTOR*);
 
 #endif

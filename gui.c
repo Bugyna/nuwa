@@ -32,8 +32,8 @@ void init_gui_system(int width, int height)
 		.grid = (GRID){
 			.row_width=GRID_AUTO,
 			.row_height=GRID_AUTO,
-			.min_cell_width=120,
-			.min_cell_height=120,
+			.min_cell_width=150,
+			.min_cell_height=150,
 			.max_cell_width=150,
 			.max_cell_height=180,
 		},
@@ -41,7 +41,7 @@ void init_gui_system(int width, int height)
 
 	DEFAULT_STYLE = (STYLE){
 		.font = DEFAULT_GUI_FONT,
-		.font_size = 16,
+		.font_size = 10,
 		.font_spacing = 1,
 		.bg = BLANK,
 		.fg = BLACK,
@@ -58,7 +58,7 @@ void init_gui_system(int width, int height)
 
 	DEFAULT_STYLE1 = (STYLE){
 		.font = DEFAULT_GUI_FONT,
-		.font_size = 16,
+		.font_size = 10,
 		.font_spacing = 1,
 		.bg = DARKGRAY,
 		.fg = WHITE,
@@ -76,7 +76,7 @@ void init_gui_system(int width, int height)
 
 	DEFAULT_STYLE2 = (STYLE){
 		.font = DEFAULT_GUI_FONT,
-		.font_size = 16,
+		.font_size = 10,
 		.font_spacing = 1,
 		.bg = BLACK,
 		.fg = WHITE,

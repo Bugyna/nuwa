@@ -56,7 +56,11 @@ typedef struct WIDGET WIDGET;
 
 typedef struct BINDING BINDING;
 
-
+typedef struct CONTENT_SIZE
+{
+	float width, height;
+	float rows, columns;
+} CONTENT_SIZE;
 
 #define BIND_FN_PARAMS WIDGET* w, EVENT e
 #define EVENT_FUNCTION_DEF int (*func) (BIND_FN_PARAMS)
@@ -184,6 +188,7 @@ struct WIDGET
 	Vector2 cursor;
 	
 	Rectangle pos;
+	Rectangle vw;
 
 	BINDING_MAP binding_map;
 
@@ -230,6 +235,68 @@ DEFINE_VECTOR(WIDGET_VECTOR, WIDGET)
 
 WIDGET_VECTOR __widgets;
 WIDGET_PTR_VECTOR WIDGET_RENDER_QUEUE;
+
+
+CONTENT_SIZE __get_content_size(WIDGET* parent)
+{
+	int width, height;
+	float _c = -1, _cc = -1, _r = -1;
+	int x_offset = 0, y_offset = 0;
+
+	if (parent->style->grid.row_width == GRID_AUTO) {
+		width = parent->pos.width / parent->__children.index;
+		
+		if (width < parent->style->grid.min_cell_width) {
+			width = parent->style->grid.min_cell_width;
+		}
+
+		else if (width > parent->style->grid.max_cell_width) {
+			width = parent->style->grid.max_cell_width;
+		}
+	}
+
+	else {
+		width = parent->style->grid.row_width / parent->__children.index;
+	}
+
+	_c = floor(parent->pos.width / width);
+
+	_r = ceil(parent->__children.index / _c);
+	// printf("r: %f %f\n", _r, _c);
+
+
+	if (parent->style->grid.row_height == GRID_AUTO) {
+		height = parent->pos.height / _r;
+		if (height < parent->style->grid.min_cell_width) {
+			height = parent->style->grid.min_cell_height;
+		}
+		else if (height > parent->style->grid.max_cell_height) {
+			height = parent->style->grid.max_cell_height;
+		}
+		
+	}
+
+	else
+		height = parent->style->grid.row_height;
+
+	return (CONTENT_SIZE){.width=width, .height=height, .rows=_r, .columns=_c};
+}
+
+
+Vector2 __get_grid_row_count(WIDGET* parent)
+{
+	
+}
+
+Vector2 __get_row_column_count(WIDGET* parent)
+{
+	
+}
+
+Vector2 __get_grid_element_size(WIDGET* parent)
+{
+	
+}
 // WIDGET create_label(int w, int h)
 // {
 	// WIDGET w;
@@ -368,7 +435,7 @@ int execute_widget_bind(WIDGET* w, char* keybind, EVENT e)
 	// printf("executing: %s %p\n", keybind, b->custom);
 	// if (b->custom == NULL && b->system == NULL) return;
 	if (b->custom != NULL) ret = b->custom(w, e);
-	if (b->system != NULL) ret = b->system(w, e);
+	if (!ret && b->system != NULL) ret = b->system(w, e);
 	return ret;
 }
 
@@ -474,6 +541,42 @@ int test_resize(BIND_FN_PARAMS)
 	return 1;
 }
 
+
+int scroll_x(BIND_FN_PARAMS)
+{
+	CONTENT_SIZE size = __get_content_size(w);
+	int offset = size.width / 2;
+	if (e.mouse_wheel_move > 0) {
+		if (w->vw.x > 0) w->vw.x += offset;
+	}
+
+	else {
+		if (w->vw.x < w->vw.width && w->vw.x < size.width * size.columns) w->vw.x += offset;
+	}
+	printf("viewport: %f.%f\n", w->vw.x, w->vw.y);
+
+	return 1;
+}
+
+int scroll_y(BIND_FN_PARAMS)
+{
+	CONTENT_SIZE size = __get_content_size(w);
+	int offset = size.height / 2;
+	
+	if (e.mouse_wheel_move > 0) {
+		if (w->vw.y > 0) w->vw.y -= offset;
+	}
+
+	else {
+		float vw_rows = w->vw.height / size.height;
+
+		if (w->vw.y < (size.rows - vw_rows)*size.height) w->vw.y += offset;
+	}
+	printf("viewport: %f   %f.%f %f %f %f \n", w->pos.height, w->vw.y, size.height, size.rows, size.columns, (size.height * size.rows));
+
+	return 1;
+}
+
 int resize_x(BIND_FN_PARAMS)
 {
 	if (e.mouse_wheel_move > 0) {
@@ -535,6 +638,11 @@ int resize_edge(BIND_FN_PARAMS)
 	return (bool)(resize_x | resize_y);
 }
 
+int __handle_resize(BIND_FN_PARAMS)
+{
+	
+}
+
 char* __create_widget_name(WIDGET_TYPE type)
 {
 	const char* type_name = widget_type_as_str(type);
@@ -583,6 +691,13 @@ WIDGET* create_widget(int x, int y, WIDGET_TYPE type, int width, int height, con
 		.height = height,
 	};
 
+	w->vw = (Rectangle){
+		.x = 0,
+		.y = 0,
+		.width = width,
+		.height = height,
+	};
+
 	size_t len = strlen(text);
 	if (len <= 1) len = 2;
 
@@ -599,6 +714,7 @@ WIDGET* create_widget(int x, int y, WIDGET_TYPE type, int width, int height, con
 
 	w->img = &EMPTY_SPRITE;
 
+	__system_bind_widget(w, "<RESIZE>", __handle_resize);
 	__system_bind_widget(w, "[MOUSE_BUTTON_LEFT]", __focus_set);
 	__system_bind_widget(w, "<MOUSE_BUTTON_LEFT><MOUSE_MOVE>", test_drag);
 	__system_bind_widget(w, "<MOUSE_BUTTON_RIGHT><MOUSE_MOVE>", test_drag_x);
@@ -629,8 +745,9 @@ WIDGET* create_frame(int width, int height, STYLE* style)
 	WIDGET* frame = create_widget(0, 0, W_FRAME, width, height, "", style);
 	WIDGET_PTR_VECTOR_INIT(&frame->__children, 10);
 	frame->__draw_children = true;
-	bind_widget(frame, "<KEY_LEFT_SHIFT><MOUSE_WHEEL_MOVE>", resize_x);
-	__system_bind_widget(frame, "<MOUSE_BUTTON_LEFT><MOUSE_MOVE>", resize_edge);
+	__system_bind_widget(frame, "<MOUSE_WHEEL_MOVE>", scroll_y);
+	bind_widget(frame, "<KEY_LEFT_SHIFT><MOUSE_WHEEL_MOVE>", scroll_x);
+	bind_widget(frame, "<MOUSE_BUTTON_LEFT><MOUSE_MOVE>", resize_edge);
 	return frame;
 }
 
@@ -1150,8 +1267,10 @@ void draw_widget(WIDGET* w)
 		// printf("Drawing image: %s\n", w->w_name);
 		w->img->dst = w->pos;
 		if (w->pos.width < 0.f || w->pos.height < 0.f) printf("\nWHAT\n");
-		w->img->src.width = w->pos.width;
-		w->img->src.width = w->pos.height;
+		w->img->src.x = 0;
+		w->img->src.y = 0;
+		// w->img->src.width = w->pos.width;
+		// w->img->src.width = w->pos.height;
 		// w->img->dst.x = w->pos.x;
 		// w->img->dst.y = w->pos.y;
 		draw_sprite(w->img);
@@ -1209,72 +1328,124 @@ void __draw_gui_grid(WIDGET* parent, int x, int y)
 	int width, height;
 	float _c = -1, _cc = -1, _r = -1;
 	int x_offset = 0, y_offset = 0;
+	int o_x = x, o_y = y;
 
-	if (parent->style->grid.row_width == GRID_AUTO) {
-		width = parent->pos.width / parent->__children.index;
-		
-		if (width < parent->style->grid.min_cell_width) {
-			width = parent->style->grid.min_cell_width;
-		}
-
-		else if (width > parent->style->grid.max_cell_width) {
-			width = parent->style->grid.max_cell_width;
-		}
-	}
-
-	else {
-		width = parent->style->grid.row_width / parent->__children.index;
-	}
-
-	_c = floor(parent->pos.width / width);
-	x_offset = (parent->pos.width - (width * _c)) / _c;
-
-	_r = ceil(parent->__children.index / _c);
-	// printf("r: %f %f\n", _r, _c);
-
-
-	if (parent->style->grid.row_height == GRID_AUTO) {
-		height = parent->pos.height / _r;
-		if (height < parent->style->grid.min_cell_width) {
-			height = parent->style->grid.min_cell_height;
-		}
-		else if (height > parent->style->grid.max_cell_height) {
-			height = parent->style->grid.max_cell_height;
-		}
-		
-	}
-
-	else
-		height = parent->style->grid.row_height;
+	CONTENT_SIZE content_size = __get_content_size(parent);
+	width = content_size.width;
+	height = content_size.height;
+	_c = content_size.columns;
+	_r = content_size.rows;
 
 	_cc = parent->pos.height / height;
-	y_offset = (parent->pos.height - (height * _r)) / _cc;
+
+	x_offset = (parent->pos.width - (width * _c)) / _c;
+	x_offset = 0;
+	// y_offset = (parent->pos.height - (height * _r)) / _cc;
+	y_offset = 0;
 
 	// printf("offset: %d %d %f %d  height: %f %d\n", x_offset, y_offset, parent->pos.width, width, parent->pos.height, height);
 	// y += y_offset;
 
+	bool draw_x = false, draw_y = false;
+	if (parent->vw.x <= 0) draw_x = true;
+	if (parent->vw.y <= 0) draw_y = true;
+
+	if (parent->style->grid.row_width == GRID_AUTO) {
+		parent->vw.width = parent->pos.width;
+	}
+	else parent->vw.width = parent->style->grid.row_width;
+
+	if (parent->style->grid.row_height == GRID_AUTO) {
+		parent->vw.height = parent->pos.height;
+	}
+	else parent->vw.height = parent->style->grid.row_height;
+
+	bool skip_row = false;
+
 	ITERATE_VECTOR(parent->__children, WIDGET*, val)
 	{
 		WIDGET* w = *val;
-		if (x+width > parent->pos.x + parent->pos.width) {
-			// printf("hapadwj\n");
+
+		if (o_x+width/2 > parent->pos.x+parent->vw.width) {
+			o_x = parent->pos.x;
 			x = parent->pos.x;
+			o_y += height + y_offset;
 			y += height + y_offset;
 		}
 
 		// if (row_height < w->pos.height) row_height = w->pos.height;
-		w->pos.x = x + (w->style->margin / 2) + x_offset / 2;
-		w->pos.y = y + w->style->margin / 2 + y_offset / 2;
-		w->pos.width = width - w->style->margin / 2 - x_offset / 2;
-		w->pos.height = height - w->style->margin;
+		// w->pos.x = x + (w->style->margin / 2) + x_offset / 2;
+		// w->pos.y = y + w->style->margin / 2 + y_offset / 2;
+		// w->pos.width = width - w->style->margin / 2 - x_offset / 2;
+		// w->pos.height = height - w->style->margin;
+
+		w->pos.x = x + x_offset / 2;
+		w->pos.y = y + y_offset / 2;
+		w->pos.width = width - x_offset / 2;
+		w->pos.height = height;
+
+		x += w->pos.width  + x_offset;
+		o_x += w->pos.width + x_offset;
+
+		if (skip_row) continue;
+
+		if (!draw_x) {
+			printf("not drawing: %d %f %f\n", x, w->pos.x+parent->vw.x);
+			if (x > parent->pos.x+parent->vw.x) {
+				x = parent->pos.x;
+				draw_x = true;
+			}
+			continue;
+		}
+
+		if (!draw_y) {
+			if (o_y > parent->pos.y+parent->vw.y) {
+				// x = parent->pos.x;
+				y = parent->pos.y;
+				w->pos.y = y;
+				draw_y = true;
+				// if (x-width > parent->pos.x) {
+					// skip_row = true;
+				// }
+				
+			}
+			else 
+				continue;
+		}
+
+		// printf("Drwaing\n");
 		// printf("what: %d %s %s\n", parent->pos.height/w->__children.index, w->w_name, parent->w_name);
-		draw_widget(w);
-		// if (w->__draw_children) {
-			// __draw_gui(w, x, y);
-		// }
-		x += w->pos.width + w->style->margin + x_offset;
-		// y += w->pos.height;
-		
+		// if (x > w->pos.x+parent->vw.x && x < parent->pos.x+parent->pos.width) {
+			// w->pos.x -= parent->vw.x;
+
+
+		if (x < parent->pos.x+parent->pos.width && y+height < parent->pos.y+parent->pos.height) {
+			draw_widget(w);
+		}
+
+		else {
+			bool can_draw = false;
+			if (w->pos.x < parent->pos.x+parent->pos.width && x > parent->pos.x+parent->pos.width) {
+				float tmp = (w->pos.x+w->pos.width) - (parent->pos.x+parent->pos.width);
+				if (tmp < width/2) {
+					w->pos.width -=  tmp;
+					can_draw = true;
+				}
+			}
+
+			if (y+height > parent->pos.y+parent->pos.height) can_draw = false;
+			// if (y < parent->pos.y+parent->pos.height && y+height > parent->pos.y+parent->pos.height) {
+				// can_draw = false;
+				// float tmp = (w->pos.y+w->pos.height) - (parent->pos.y+parent->pos.height);
+				// if (tmp < height/2) {
+					// w->pos.height -=  tmp;
+					// can_draw = true;
+				// }
+			// }
+			
+			if (can_draw) draw_widget(w);
+		}
+
 	}
 }
 

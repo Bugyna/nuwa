@@ -398,7 +398,8 @@ void event_handle()
 	strcpy(__EVENT_ALL, __EVENT_KEYS);
 	
 	if (mouse_wheel) {
-		strcat(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
+		// strcat(__EVENT_ALL, "<MOUSE_WHEEL_MOVE>");
+		strcpy(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
 		// TODO: mouse_wheel event
 		// printf("wheel: %f\n", mouse_wheel);
 	}
