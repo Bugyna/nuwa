@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "core.h"
 #include "util.c"
 #include "arena.h"
 
@@ -20,6 +21,8 @@ char __EVENT_KEYS_JUST_PRESSED[150] = {};
 char __EVENT_BUTTONS[150] = {};
 char* __EVENT_MOUSE;
 char __EVENT_ALL[300] = {};
+
+// char __EVENT_KEYS_NONBLOCK
 
 bool __BUTTONS_CURRENTLY_HELD[6] = {0, 0, 0, 0, 0};
 

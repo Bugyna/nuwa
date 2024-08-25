@@ -2,11 +2,15 @@
 #include <raymath.h>
 #include <locale.h>
 
+
+#include "core.h"
 #include "assets.c"
 #include "sprite.h"
 #include "gui.c"
 #include "eventloop.c"
 #include "editor.c"
+#include "animation.h"
+
 #include <sys/resource.h>
 
 
@@ -54,6 +58,21 @@ static const char *postproShaderText[] = {
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
+
+
+int move_left(BIND_FN_PARAMS)
+{
+	SPRITE* s = payload;
+	s->dst.x -= 10;
+	return 0;
+}
+
+int move_right(BIND_FN_PARAMS)
+{
+	SPRITE* s = payload;
+	s->dst.x += 10;
+	return 0;
+}
 
 
 int main(void)
@@ -154,12 +173,22 @@ int main(void)
 	// s.tex = bed_texture;
 	// s.src = (Rectangle){.x=0, .y=0, .width=100, .height=100};
 	// s.dst = (Rectangle){.x=0, .y=0, .width=100, .height=100};
-	SPRITE s = create_sprite_from_image("assets/gg_bed.png");
+	// SPRITE s = create_sprite_from_image("assets/gg_bed.png");
+	// SPRITE s = create_sprite_from_image("assets/pierce.png");
+	SPRITE s = create_sprite_from_image("assets/mc.png");
+
+	s.dst.width = 200;
+	s.dst.height = 300;
+	s.src.width = 1024;
+	// s.cosi.x = 100;
+	// s.cosi.y = 150;
+	// s.src.width = 2048;
+	ANIMATION test_anim = ANIMATION_CREATE(&s, 16, 0, 4, 1024, 0);
+	
 
 	init_editor();
 
-	SetTargetFPS(120);				   // Set our game to run at 60 frames-per-second
-	//--------------------------------------------------------------------------------------
+	SetTargetFPS(120);
 
 
 	bool testing = false;
@@ -218,6 +247,8 @@ int main(void)
 	// add_widget_to_render_queue(test_widget1);
 	// add_widget_to_render_queue(test_widget2);
 	// remove_widget_from_render_queue(test_widget);
+
+	bind_widget_with_payload(WINDOW_WIDGET, "<KEY_D>", move_right, &s);
 	char text_pos_buf[100];
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
@@ -276,7 +307,7 @@ int main(void)
 			ITERATE_VECTOR(EDITOR_RENDER_QUEUE, SPRITE, val)
 			{
 				draw_sprite(val);
-				if (val == selected_sprite_ptr) DrawRectangleLinesEx(val->dst, 2, DARKGRAY);
+				if (val == selected_sprite_ptr) DrawRectangleLinesEx(val->dst, 2, GREEN);
 			}
 
 			if (show_gui_debug_info) {
@@ -292,7 +323,10 @@ int main(void)
 				// sprintf(text_pos_buf, "[%d:%d]", (int)test_text_input->cursor.y, (int)test_text_input->cursor.x);
 				DrawText(text_pos_buf, 500, 400, 20, BLACK);
 			}
-			
+
+			// test_anim.atlas->rotation += 1;
+			animation_step(&test_anim);
+			draw_animation(test_anim);
 			// DrawTexture(s.tex, 100, 200, WHITE);
 
 			// draw_widget(test_widget);

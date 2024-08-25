@@ -62,7 +62,7 @@ typedef struct CONTENT_SIZE
 	float rows, columns;
 } CONTENT_SIZE;
 
-#define BIND_FN_PARAMS WIDGET* w, EVENT e
+#define BIND_FN_PARAMS WIDGET* w, EVENT e, void* payload
 #define EVENT_FUNCTION_DEF int (*func) (BIND_FN_PARAMS)
 
 // typedef int (*func) (BIND_FN_PARAMS) EVENT_FUNCTION_DEF;
@@ -158,6 +158,8 @@ struct BINDING
 	// int keys[12];
 	// int buttons[6];
 	char* str;
+	void* system_payload;
+	void* custom_payload;
 
 	int (*system) (BIND_FN_PARAMS);
 	int (*custom) (BIND_FN_PARAMS);
@@ -240,6 +242,9 @@ WIDGET_PTR_VECTOR WIDGET_RENDER_QUEUE;
 
 CONTENT_SIZE __get_content_size(WIDGET* parent)
 {
+	if (parent->__children.index == 0) return (CONTENT_SIZE){.width=0, .height=0, .rows=0, .columns=0};
+	if (parent->style->use_grid == false) return (CONTENT_SIZE){.width=0, .height=0, .rows=0, .columns=0};
+
 	int width, height;
 	float _c = -1, _cc = -1, _r = -1;
 	int x_offset = 0, y_offset = 0;
@@ -367,7 +372,7 @@ void init_gui_system();
 	// return b;
 // }
 
-void bind_widget(WIDGET* w, char* keybind, int (*func) (BIND_FN_PARAMS))
+void bind_widget_with_payload(WIDGET* w, char* keybind, int (*func) (BIND_FN_PARAMS), void* payload)
 {
 	BINDING* b = NULL;
 	b = BINDING_MAP_GET(&w->binding_map, keybind);
@@ -383,10 +388,19 @@ void bind_widget(WIDGET* w, char* keybind, int (*func) (BIND_FN_PARAMS))
 		b->custom = func;
 		BINDING_MAP_ADD(&w->binding_map, b->str, b);
 	}
+
+	b->custom_payload = payload;
 }
 
 
-void __system_bind_widget(WIDGET* w, const char* keybind, int (*func) (BIND_FN_PARAMS))
+void bind_widget(WIDGET* w, char* keybind, int (*func) (BIND_FN_PARAMS))
+{
+	bind_widget_with_payload(w, keybind, func, NULL);
+}
+
+
+
+void __system_bind_widget_with_payload(WIDGET* w, const char* keybind, int (*func) (BIND_FN_PARAMS), void* payload)
 {
 	// BINDING* b = malloc(sizeof(BINDING));
 	BINDING* b = NULL;
@@ -403,7 +417,18 @@ void __system_bind_widget(WIDGET* w, const char* keybind, int (*func) (BIND_FN_P
 		b->system = func;
 		BINDING_MAP_ADD(&w->binding_map, b->str, b);
 	}
+
+	b->system_payload = payload;
 }
+
+
+void __system_bind_widget(WIDGET* w, const char* keybind, int (*func) (BIND_FN_PARAMS))
+{
+	__system_bind_widget_with_payload(w, keybind, func, NULL);
+}
+
+
+
 
 void unbind_widget(WIDGET* w, const char* keybind)
 {
@@ -435,8 +460,8 @@ int execute_widget_bind(WIDGET* w, char* keybind, EVENT e)
 	if (b == NULL) return ret;
 	// printf("executing: %s %p\n", keybind, b->custom);
 	// if (b->custom == NULL && b->system == NULL) return;
-	if (b->custom != NULL) ret = b->custom(w, e);
-	if (!ret && b->system != NULL) ret = b->system(w, e);
+	if (b->custom != NULL) ret = b->custom(w, e, b->custom_payload);
+	if (!ret && b->system != NULL) ret = b->system(w, e, b->system_payload);
 	return ret;
 }
 
@@ -828,7 +853,7 @@ int text_input_handle(BIND_FN_PARAMS)
 	return 1;
 }
 
-int move_up(BIND_FN_PARAMS);
+int text_move_up(BIND_FN_PARAMS);
 
 int text_input_backspace(BIND_FN_PARAMS)
 {
@@ -840,7 +865,7 @@ int text_input_backspace(BIND_FN_PARAMS)
 
 	if (w->cursor.x < 0) {
 		// STRING* p = STRING_VECTOR_GET(&w->lines, w->cursor.y);
-		move_up(w, e);
+		text_move_up(w, e, NULL);
 		STRING_POP(&w->text);
 		w->cursor.x = w->text.index;
 		printf("cursor delete: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
@@ -920,7 +945,7 @@ int text_input_newline(BIND_FN_PARAMS)
 }
 
 
-int move_up(BIND_FN_PARAMS)
+int text_move_up(BIND_FN_PARAMS)
 {
 	// STRING_ADD(&w->text, '\n');
 	printf("cursor up: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
@@ -946,7 +971,7 @@ int move_up(BIND_FN_PARAMS)
 	return 1;
 }
 
-int move_down(BIND_FN_PARAMS)
+int text_move_down(BIND_FN_PARAMS)
 {
 	printf("cursor down: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 
@@ -972,23 +997,23 @@ int move_down(BIND_FN_PARAMS)
 	return 1;
 }
 
-int move_left(BIND_FN_PARAMS)
+int text_move_left(BIND_FN_PARAMS)
 {
 	printf("cursor left: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	w->cursor.x--;
 	if (w->cursor.x < 0) {
-		if (w->cursor.y > 1) { move_up(w, e); w->cursor.x = w->text.index-1; }
+		if (w->cursor.y > 1) { text_move_up(w, e, NULL); w->cursor.x = w->text.index-1; }
 		else w->cursor.x++;
 	}
 	printf("cursor left A: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	return 1;
 }
 
-int move_right(BIND_FN_PARAMS)
+int text_move_right(BIND_FN_PARAMS)
 {
 	printf("cursor right: %f, %f : %d\n", w->cursor.y, w->cursor.x, w->lines.index);
 	if (w->cursor.x >= w->text.index || w->text.str[(int)w->cursor.x] == '\n' || w->text.str[(int)w->cursor.x] == '\r' || w->text.str[(int)w->cursor.x+1] == '\n' || w->text.str[(int)w->cursor.x+1] == '\r') {
-		if (w->cursor.y < w->lines.index) { move_down(w, e); w->cursor.x = 0; }
+		if (w->cursor.y < w->lines.index) { text_move_down(w, e, NULL); w->cursor.x = 0; }
 	}
 	else {
 		w->cursor.x++;
@@ -998,14 +1023,14 @@ int move_right(BIND_FN_PARAMS)
 	return 1;
 }
 
-int move_start_of_line(BIND_FN_PARAMS)
+int text_move_start_of_line(BIND_FN_PARAMS)
 {
 
 	w->cursor.x = 0;
 	return 1;
 }
 
-int move_end_of_line(BIND_FN_PARAMS)
+int text_move_end_of_line(BIND_FN_PARAMS)
 {
 
 	w->cursor.x = w->text.index-1;
@@ -1035,12 +1060,12 @@ WIDGET* create_text_input(const char* text, STYLE* style)
 	__system_bind_widget(text_input, "<KEYPRESS>", text_input_handle);
 	__system_bind_widget(text_input, "<KEY_BACKSPACE>", text_input_backspace);
 	__system_bind_widget(text_input, "<KEY_ENTER>", text_input_newline);
-	__system_bind_widget(text_input, "<KEY_UP>", move_up);
-	__system_bind_widget(text_input, "<KEY_DOWN>", move_down);
-	__system_bind_widget(text_input, "<KEY_LEFT>", move_left);
-	__system_bind_widget(text_input, "<KEY_RIGHT>", move_right);
-	__system_bind_widget(text_input, "<KEY_HOME>", move_start_of_line);
-	__system_bind_widget(text_input, "[KEY_END]", move_end_of_line);
+	__system_bind_widget(text_input, "<KEY_UP>", text_move_up);
+	__system_bind_widget(text_input, "<KEY_DOWN>", text_move_down);
+	__system_bind_widget(text_input, "<KEY_LEFT>", text_move_left);
+	__system_bind_widget(text_input, "<KEY_RIGHT>", text_move_right);
+	__system_bind_widget(text_input, "<KEY_HOME>", text_move_start_of_line);
+	__system_bind_widget(text_input, "[KEY_END]", text_move_end_of_line);
 	__system_unbind_widget(text_input, "[KEY_A]");
 	bind_widget(text_input, "[KEY_TAB]", print_lines);
 	STRING_VECTOR_INIT(&text_input->lines, 10);

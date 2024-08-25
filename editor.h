@@ -8,6 +8,8 @@
 #include "util.c"
 #include "sprite.h"
 #include "arena.h"
+#include "animation.h"
+
 
 #include "gui.h"
 
@@ -48,13 +50,13 @@ int place_sprite(BIND_FN_PARAMS)
 		selected_sprite_ptr = __selected_sprite_empty;
 		selected_sprite = false;
 	}
-	return 1;
+	return 0;
 }
 
 int update_selected_sprite_pos(BIND_FN_PARAMS)
 {
-	selected_sprite_ptr->dst.x = e.mouse_pos.x;
-	selected_sprite_ptr->dst.y = e.mouse_pos.y;
+	selected_sprite_ptr->dst.x = e.mouse_pos.x - selected_sprite_ptr->dst.width/2;
+	selected_sprite_ptr->dst.y = e.mouse_pos.y - selected_sprite_ptr->dst.height/2;
 	return 1;
 }
 

@@ -21,6 +21,8 @@ typedef struct
 	Texture2D tex;
 	Rectangle src, dst;
 	Vector2 cosi;
+	float rotation;
+
 } SPRITE;
 
 DEFINE_VECTOR(SPRITE_VECTOR, SPRITE)
@@ -60,9 +62,15 @@ SPRITE create_sprite_from_image(char* path)
 	s.path = malloc(strlen(path));
 	strcpy(s.path, path);
 	Image img = LoadImage(path);
+
+	if (img.data == NULL) {
+		NUWA_ERROR_N("Image failed to load: %s\n", path);
+	}
+	
 	s.tex = LoadTextureFromImage(img);
 
 	s.cosi = (Vector2){.x=0, .y=0};
+	s.rotation = 0;
 
 	s.dst = (Rectangle){
 		.x = 0.f,
@@ -88,7 +96,10 @@ SPRITE create_sprite_from_image_f(char* path, float w, float h)
 	s.path = malloc(strlen(path));
 	strcpy(s.path, path);
 
-	s.cosi = (Vector2){.x=0, .y=0};
+	s.cosi = (Vector2){.x=w/2, .y=h/2};
+	s.rotation = 0;
+
+
 	Image img = LoadImage(path);
 	ImageResize(&
 	img, w, h);
@@ -128,7 +139,15 @@ void draw_sprite_simple(SPRITE* s)
 void draw_sprite(SPRITE* s)
 {
 	// printf("Drawing image %f %f %f %f %f %f %f %f\n", s->dst.x, s->dst.y, s->dst.width, s->dst.height, s->src.width, s->src.height, s->tex.width, s->tex.height);
-	DrawTexturePro(s->tex, s->src, s->dst, s->cosi, 0, WHITE);
+	DrawTexturePro(s->tex, s->src, s->dst, s->cosi, s->rotation, WHITE);
+}
+
+
+void draw_sprite_at_pos(SPRITE* s, float x, float y)
+{
+	s->dst.x = x;
+	s->dst.y = y;
+	draw_sprite(s);
 }
 
 #endif

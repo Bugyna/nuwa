@@ -470,7 +470,8 @@ void event_handle()
 	WIDGET* last_attention = __WIDGET_ATTENTION;
 
 
-	__WIDGET_ATTENTION = WINDOW_WIDGET;
+	__WIDGET_ATTENTION = EMPTY_WIDGET;
+
 
 	ITERATE_VECTOR(__widgets, WIDGET, val)
 	{	
@@ -479,6 +480,7 @@ void event_handle()
 			__WIDGET_ATTENTION = val;
 		}
 	}
+
 	// if (__WIDGET_ATTENTION != NULL) {
 		// printf("WW: %s\n", __WIDGET_ATTENTION->w_name);
 		// __WIDGET_FOCUS = __WIDGET_ATTENTION;
@@ -560,7 +562,7 @@ void event_handle()
 	
 	
 	if (__EVENT_ALL[0]) {
-		printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+		// printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
 	// printf("all: %s\n", __CHARS_BUFFER);
 		// printf("FLUSH\n\n\n");
 	}
