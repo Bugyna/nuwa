@@ -27,7 +27,7 @@ SPRITE_VECTOR load_all_assets(const char* asset_path)
 
 	char tmp[4096];
 	strcpy(tmp, asset_path);
-	size_t offset = strlen(asset_path);
+	size_t offset = strlen(asset_path)+1;
 	
 	while ((file = readdir(dir)) != NULL) {
 		if (strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0 ) continue;

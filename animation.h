@@ -20,6 +20,8 @@
 typedef struct ANIMATION ANIMATION;
 typedef struct TRANSFORM_ANIMATION TRANSFORM_ANIMATION;
 
+typedef struct ANIMATION_TREE ANIMATION_TREE;
+
 
 struct ANIMATION
 {
@@ -69,7 +71,7 @@ ANIMATION ANIMATION_CREATE(SPRITE* atlas, int frame_rate, int rows, int columns,
 
 void animation_step(ANIMATION* anim)
 {
-	printf("anim: %f %f\n", anim->__delta_since_last_update, 1000/anim->frame_rate*0.001);
+	// printf("anim: %f %f\n", anim->__delta_since_last_update, 1000/anim->frame_rate*0.001);
 	anim->__delta_since_last_update += GetFrameTime();
 
 
@@ -96,6 +98,14 @@ void draw_animation(ANIMATION anim)
 {
 	draw_sprite(anim.atlas);
 }
+
+
+DEFINE_VECTOR(ANIMATION_VECTOR, ANIMATION);
+struct ANIMATION_TREE
+{
+	ANIMATION_VECTOR animations;
+	int state;
+};
 
 #endif
 

@@ -10,6 +10,8 @@
 #include "eventloop.c"
 #include "editor.c"
 #include "animation.h"
+#include "entity.h"
+#include "scene.h"
 
 #include <sys/resource.h>
 
@@ -74,6 +76,20 @@ int move_right(BIND_FN_PARAMS)
 	return 0;
 }
 
+int move_down(BIND_FN_PARAMS)
+{
+	SPRITE* s = payload;
+	s->dst.y += 10;
+	return 0;
+}
+
+
+int move_up(BIND_FN_PARAMS)
+{
+	SPRITE* s = payload;
+	s->dst.y -= 10;
+	return 0;
+}
 
 int main(void)
 {
@@ -136,7 +152,7 @@ int main(void)
 	int currentShader = FX_GRAYSCALE;
 
 	RenderTexture2D target = LoadRenderTexture(screenWidth, screenHeight);
-	SPRITE_VECTOR asset_list = load_all_assets(NULL);
+	// SPRITE_VECTOR asset_list = load_all_assets("./assets/");
 
 	// Create a RenderTexture2D to be used for render to texture
 	// Image wall_img = LoadImage("gg_wallpaper.png");			 // Load image in CPU memory (RAM)
@@ -175,6 +191,9 @@ int main(void)
 	// s.dst = (Rectangle){.x=0, .y=0, .width=100, .height=100};
 	// SPRITE s = create_sprite_from_image("assets/gg_bed.png");
 	// SPRITE s = create_sprite_from_image("assets/pierce.png");
+
+
+
 	SPRITE s = create_sprite_from_image("assets/mc.png");
 
 	s.dst.width = 200;
@@ -183,16 +202,16 @@ int main(void)
 	// s.cosi.x = 100;
 	// s.cosi.y = 150;
 	// s.src.width = 2048;
-	ANIMATION test_anim = ANIMATION_CREATE(&s, 16, 0, 4, 1024, 0);
+	ANIMATION test_anim = ANIMATION_CREATE(&s, 5, 0, 4, 1024, 0);
 	
 
-	init_editor();
+	// init_editor();
 
 	SetTargetFPS(120);
 
 
-	bool testing = false;
-	WIDGET* asset_frame = create_frame(400, 400, NULL);
+	bool testing = true;
+	// WIDGET* asset_frame = create_frame(400, 400, NULL);
 
 	if (testing)
 	{
@@ -223,8 +242,8 @@ int main(void)
 		add_widget_to_render_queue(test_text_input);
 	
 		// SPRITE s = create_sprite_from_image_f("assets/gg_bed.png", 200, 200);
-		// widget_add_img(test_widget, &s);
-		test_widget->img = &s;
+		widget_add_img(test_widget, &s);
+		// test_widget->img = &s;
 		// printf("bool: %d\n", &test_widget->img != &EMPTY_SPRITE);
 	
 		focus_set(test_text_input);
@@ -234,29 +253,34 @@ int main(void)
 	bool show_gui_debug_info = true;
 
 	
-	ITERATE_VECTOR(asset_list, SPRITE, val)
-	{
-		WIDGET* w = create_label(val->path, NULL);
-		widget_add_img(w, val);
-		add_child_widget(asset_frame, w);
-		bind_widget(w, "[MOUSE_BUTTON_LEFT]", select_sprite);
-	}
+	// ITERATE_VECTOR(asset_list, SPRITE, val)
+	// {
+		// WIDGET* w = create_label(val->path, NULL);
+		// widget_add_img(w, val);
+		// add_child_widget(asset_frame, w);
+		// bind_widget(w, "[MOUSE_BUTTON_LEFT]", select_sprite);
+	// }
 
-	add_widget_to_render_queue(asset_frame);
-	// add_widget_to_render_queue(test_widget);
-	// add_widget_to_render_queue(test_widget1);
-	// add_widget_to_render_queue(test_widget2);
-	// remove_widget_from_render_queue(test_widget);
+	// add_widget_to_render_queue(asset_frame);
+	// // add_widget_to_render_queue(test_widget);
+	// // add_widget_to_render_queue(test_widget1);
+	// // add_widget_to_render_queue(test_widget2);
+	// // remove_widget_from_render_queue(test_widget);
 
 	bind_widget_with_payload(WINDOW_WIDGET, "<KEY_D>", move_right, &s);
+	bind_widget_with_payload(WINDOW_WIDGET, "<KEY_A>", move_left, &s);
+	bind_widget_with_payload(WINDOW_WIDGET, "<KEY_S>", move_down, &s);
+	bind_widget_with_payload(WINDOW_WIDGET, "<KEY_W>", move_up, &s);
 	char text_pos_buf[100];
+
 	// Main game loop
 	while (!WindowShouldClose())		// Detect window close button or ESC key
 	{
 		// Update
 		//----------------------------------------------------------------------------------
 		// UpdateCamera(&camera, CAMERA_ORBITAL);
-
+// #define skip
+#ifndef skip
 		if (IsKeyPressed(KEY_RIGHT)) currentShader++;
 		else if (IsKeyPressed(KEY_LEFT)) currentShader--;
 
@@ -320,21 +344,23 @@ int main(void)
 				DrawText(__WIDGET_LOCK->w_name, 500, 280, 20, BLACK);
 				DrawText(__WIDGET_LOCK1->w_name, 500, 320, 20, BLACK);
 				DrawText(__EVENT_ALL, 500, 360, 20, BLACK);
+
 				// sprintf(text_pos_buf, "[%d:%d]", (int)test_text_input->cursor.y, (int)test_text_input->cursor.x);
 				DrawText(text_pos_buf, 500, 400, 20, BLACK);
 			}
 
 			// test_anim.atlas->rotation += 1;
-			animation_step(&test_anim);
-			draw_animation(test_anim);
+			// animation_step(&test_anim);
+			// draw_animation(test_anim);
 			// DrawTexture(s.tex, 100, 200, WHITE);
 
 			// draw_widget(test_widget);
 			// draw_widget(test_widget1);
 			// event_handle_keyboard();
 			// event_handle_mouse();
-		EndDrawing();
+#endif
 		//----------------------------------------------------------------------------------
+		EndDrawing();
 	}
 
 	// De-Initialization
@@ -344,8 +370,8 @@ int main(void)
 
 	// UnloadTexture(test_texture);		 // Unload texture
 	// UnloadTexture(texture);		 // Unload texture
-	unload_sprite(&s);
-	unload_all_assets(&asset_list);
+	// unload_sprite(&s);
+	// unload_all_assets(&asset_list);
 	// UnloadModel(model);			 // Unload model
 	UnloadRenderTexture(target);	// Unload render texture
 

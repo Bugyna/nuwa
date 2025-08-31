@@ -107,7 +107,8 @@ void init_gui_system(int width, int height)
 		.border_img = (SPRITE){},
 		.use_grid = false,
 	};
-	
+
+
 	WIDGET_VECTOR_INIT(&__widgets, 40);
 	WIDGET_PTR_VECTOR_INIT(&WIDGET_RENDER_QUEUE, 40);
 	

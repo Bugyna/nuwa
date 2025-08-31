@@ -18,7 +18,9 @@
 
 
 SPRITE EMPTY_SPRITE = (SPRITE){0};
-SPRITE* EMPTY_SPRITE_PTR = &EMPTY_SPRITE;
+SPRITE *EMPTY_SPRITE_PTR = &EMPTY_SPRITE;
+
+
 
 typedef enum
 {
@@ -31,7 +33,6 @@ typedef enum
 	W_SLIDER,
 	W_DROPDOWN,
 } WIDGET_TYPE;
-
 
 
 #define __STRINGIFY_SWITCH_CASE(N) case N: return #N;
@@ -383,7 +384,7 @@ void bind_widget_with_payload(WIDGET* w, char* keybind, int (*func) (BIND_FN_PAR
 
 	else {
 		b = calloc(1, sizeof(BINDING));
-		b->str = malloc(strlen(keybind));
+		b->str = malloc(strlen(keybind)+1);
 		strcpy(b->str, keybind);
 		b->custom = func;
 		BINDING_MAP_ADD(&w->binding_map, b->str, b);
@@ -412,7 +413,7 @@ void __system_bind_widget_with_payload(WIDGET* w, const char* keybind, int (*fun
 
 	else {
 		b = calloc(1, sizeof(BINDING));
-		b->str = malloc(strlen(keybind));
+		b->str = malloc(strlen(keybind)+1);
 		strcpy(b->str, keybind);
 		b->system = func;
 		BINDING_MAP_ADD(&w->binding_map, b->str, b);
@@ -455,6 +456,7 @@ int execute_widget_bind(WIDGET* w, char* keybind, EVENT e)
 {
 	if (w->disabled) return -1;
 	if (w->__parent != NULL) execute_widget_bind(w->__parent, keybind, e);
+
 	BINDING* b = BINDING_MAP_GET(&w->binding_map, keybind);
 	int ret = 0;
 	if (b == NULL) return ret;
@@ -515,6 +517,7 @@ int change_style(BIND_FN_PARAMS)
 
 int test_drag(BIND_FN_PARAMS)
 {
+	printf("dragging: %s\n", w->w_name);
 	Vector2 mouse_pos = e.mouse_pos;
 	Vector2 rel_pos = get_relative_pos_PointRec(GetMousePosition(), w->pos);
 	// printf("pos: %f,%f | %f,%f == %f\n", mouse_pos.x, mouse_pos.y, rel_pos.x, rel_pos.y, mouse_pos.x - rel_pos.x);
@@ -672,7 +675,7 @@ int __handle_resize(BIND_FN_PARAMS)
 char* __create_widget_name(WIDGET_TYPE type)
 {
 	const char* type_name = widget_type_as_str(type);
-	int offset = 2; // strlen("w.") + 1
+	int offset = 3; // strlen("w.") + 1
 	if (__widgets.index >= 10) {
 		offset += 2;
 	}
@@ -686,7 +689,7 @@ char* __create_widget_name(WIDGET_TYPE type)
 		offset += 5;
 	}
 
-	char* ret = calloc(offset+strlen(type_name), sizeof(char));
+	char* ret = calloc(offset+strlen(type_name)+1, sizeof(char));
 	sprintf(ret, "w.%s%d", type_name, __widgets.index);
 	// ret[0] = 'w';
 	// ret[1] = '.';
@@ -724,7 +727,7 @@ WIDGET* create_widget(int x, int y, WIDGET_TYPE type, int width, int height, con
 		.height = height,
 	};
 
-	size_t len = strlen(text);
+	size_t len = strlen(text)+1;
 	if (len <= 1) len = 2;
 
 	// STRING_INITA(&w->text, &w->str_pool, len);

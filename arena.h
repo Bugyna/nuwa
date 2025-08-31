@@ -151,7 +151,7 @@ void NAME##_SET_VAL(NAME* vec, TYPE val, size_t index)               \
 	vec->items[index] = val;                                              \
 }                                                                    \
 void NAME##_INIT(NAME* vec, size_t size)                             \
-{                                                                    \
+{                                                                      \
 	vec->items = calloc(size, sizeof(TYPE));                            \
 	vec->available = size;                                            \
 	vec->index = 0;                                                   \

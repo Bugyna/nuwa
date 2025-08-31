@@ -195,6 +195,21 @@ const char* u32_to_utf8_string(int c)
 }
 
 
+void event_handle_touch()
+{
+	__TOUCH_POINT_INDEX = GetTouchPointCount();
+	for (int i = 0; i < __TOUCH_POINT_INDEX; i++)
+	// for (__TOUCH_POINT_INDEX = 0; __TOUCH_POINT_INDEX < __MAX_TOUCH_POINTS; __TOUCH_POINT_INDEX++)
+	{
+		// Vector2 t = GetTouchPosition(i);
+		// if (t.x < 0 && t.y < 0) break;
+		// __TOUCH_POINTS[i] = t;
+		__TOUCH_POINTS[i] = GetTouchPosition(i);
+	}
+	
+}
+
+
 void event_process_held_keys()
 {
 	const char* tmp = NULL;
@@ -203,6 +218,7 @@ void event_process_held_keys()
 	// for (int i = 0; i < 360; i++)
 	{
 		// printf("i: %d %d\n", i, __KEYS_HELD_INDEX);
+		char* last = __EVENT_KEYS+strlen(__EVENT_KEYS);
 		if (IsKeyDown(__KEYS_HELD[i])) {
 			tmp = get_key_name(__KEYS_HELD[i]);
 			strcat(__EVENT_KEYS, "<");
@@ -224,6 +240,9 @@ void event_process_held_keys()
 			__KEYS_HELD_INDEX--;
 			i--;
 		}
+
+		printf("tmp: %s\n", last);
+		execute_widget_bind(WINDOW_WIDGET, last, (EVENT){0});
 	}
 }
 
@@ -286,7 +305,9 @@ const char* event_handle_keyboard()
 
 
 	// event_process_held_keys();
-	__DELTA_SINCE_LAST_UPDATE += GetFrameTime();
+	// __DELTA_SINCE_LAST_UPDATE += GetFrameTime();
+
+	__DELTA_SINCE_LAST_UPDATE = 2;
 	if (should_process_held_keys) {
 		event_process_held_keys();
 	}
@@ -370,6 +391,7 @@ const char* event_handle_mouse(bool mouse_move)
 
 	// Vector2 mouse_wheel = GetMouseWheelMoveV();
 	// if (mouse_wheel.x || mouse_wheel.y) printf("wheel: %f.%f\n", mouse_wheel.x, mouse_wheel.y);
+	// printf("MOUSE: %s\n", __EVENT_BUTTONS);
 	return __EVENT_BUTTONS;
 }
 
@@ -390,8 +412,12 @@ void event_handle()
 	}
 
 
-	const char* keys = event_handle_keyboard();
-	const char* buttons = event_handle_mouse(mouse_move);
+	const char* keys = NULL;
+	if (HANDLE_KEYBOARD) keys = event_handle_keyboard();
+	const char* buttons = NULL;
+	if (HANDLE_MOUSE) buttons = event_handle_mouse(mouse_move);
+
+	if (HANDLE_TOUCHSCREEN) event_handle_touch();
 	
 
 	memset(__EVENT_ALL, 0, 300);
@@ -399,7 +425,7 @@ void event_handle()
 	
 	if (mouse_wheel) {
 		// strcat(__EVENT_ALL, "<MOUSE_WHEEL_MOVE>");
-		strcpy(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_WHEEL_MOVE>");
+		strcpy(__EVENT_ALL+strlen(__EVENT_ALL)+1, "<MOUSE_WHEEL_MOVE>");
 		// TODO: mouse_wheel event
 		// printf("wheel: %f\n", mouse_wheel);
 	}
@@ -407,13 +433,13 @@ void event_handle()
 
 
 	__EVENT_MOUSE = __EVENT_ALL+strlen(__EVENT_ALL);
-	strcpy(__EVENT_MOUSE, __EVENT_BUTTONS);
+	strcat(__EVENT_MOUSE, __EVENT_BUTTONS);
 
 
 
 
 	if (mouse_move) {
-		strcpy(__EVENT_ALL+strlen(__EVENT_ALL), "<MOUSE_MOVE>");
+		strcat(__EVENT_ALL, "<MOUSE_MOVE>");
 
 		
 		if (!__MOUSE_DRAGGING && __BUTTONS_CURRENTLY_HELD[0]) {
@@ -459,12 +485,16 @@ void event_handle()
 		.char_held = __CHARS_BUFFER[__CHARS_BUFFER_INDEX-1],
 		.last_mouse_pos = __LAST_MOUSE_POS,
 		.drag_pos = __DRAG_START_POS,
+
+		.touch_points = __TOUCH_POINTS,
+		.touch_point_index = __TOUCH_POINT_INDEX,
 	};
 
 	
 	__LAST_MOUSE_POS = mouse_position;
-	
-	
+
+	if (__TOUCH_POINT_INDEX > 0) strcat(__EVENT_ALL, "<Touch>");
+
 	
 	
 	WIDGET* last_attention = __WIDGET_ATTENTION;
@@ -498,15 +528,15 @@ void event_handle()
 		execute_widget_bind(WINDOW_WIDGET, "<WINDOW_RESIZED>", e);
 	}
 
-
-	// execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 	
+	// execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
+
 	if (__WIDGET_FOCUS != __WIDGET_ATTENTION && (!mouse_move || __WIDGET_FOCUS != __WIDGET_LOCK)) {
 		int ret = 0;
 		if (mouse_move) execute_widget_bind(__WIDGET_ATTENTION, "<MOUSE_MOVE>", e);
 		ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_BUTTONS, e);
 		// ret = execute_widget_bind(__WIDGET_ATTENTION, __EVENT_MOUSE, e);
-		
+
 		
 		execute_widget_bind(__WIDGET_FOCUS, __EVENT_ALL, e);
 		execute_widget_bind(__WIDGET_FOCUS, __EVENT_KEYS_JUST_PRESSED, e);
@@ -562,7 +592,7 @@ void event_handle()
 	
 	
 	if (__EVENT_ALL[0]) {
-		// printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
+		printf("all: %s %s %s %d %f, %f\n%s\n", __EVENT_ALL, __EVENT_KEYS, __EVENT_KEYS_JUST_PRESSED, strcmp(__EVENT_KEYS, __EVENT_ALL), mouse_position.x, mouse_position.y, __CHARS_BUFFER);
 	// printf("all: %s\n", __CHARS_BUFFER);
 		// printf("FLUSH\n\n\n");
 	}

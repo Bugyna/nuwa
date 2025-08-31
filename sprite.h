@@ -36,6 +36,7 @@ typedef struct LAYER
 
 } LAYER;
 
+DEFINE_VECTOR(LAYER_VECTOR, LAYER);
 
 void draw_sprite(SPRITE* s);
 
@@ -59,7 +60,7 @@ void draw_layer(LAYER* l)
 SPRITE create_sprite_from_image(char* path)
 {
 	SPRITE s;
-	s.path = malloc(strlen(path));
+	s.path = malloc(strlen(path)+1);
 	strcpy(s.path, path);
 	Image img = LoadImage(path);
 
@@ -93,7 +94,7 @@ SPRITE create_sprite_from_image(char* path)
 SPRITE create_sprite_from_image_f(char* path, float w, float h)
 {
 	SPRITE s;
-	s.path = malloc(strlen(path));
+	s.path = malloc(strlen(path)+1);
 	strcpy(s.path, path);
 
 	s.cosi = (Vector2){.x=w/2, .y=h/2};

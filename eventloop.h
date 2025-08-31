@@ -14,6 +14,12 @@
 #ifndef EVENTLOOP_H_
 #define EVENTLOOP_H_
 
+
+bool HANDLE_TOUCHSCREEN = 1;
+bool HANDLE_KEYBOARD = 1;
+bool HANDLE_MOUSE = 1;
+bool HANDLE_JOYSTICK = 1;
+
 float __DELTA_SINCE_LAST_UPDATE = 0.f;
 
 char __EVENT_KEYS[150] = {};
@@ -32,6 +38,14 @@ Vector2 __DRAG_START_POS = {.x=-1, .y=-1};
 
 bool __MOUSE_MOVING = false;
 bool __MOUSE_DRAGGING = false;
+
+
+// const int __MAX_TOUCH_POINTS = 10;
+#define __MAX_TOUCH_POINTS 10
+Vector2 __TOUCH_POINTS[__MAX_TOUCH_POINTS];
+int __TOUCH_POINT_INDEX = 0;
+
+
 
 static int __CHARS_BUFFER[150];
 int __CHARS_BUFFER_INDEX = 0;
@@ -63,6 +77,10 @@ typedef struct
 	int char_held;
 
 	Vector2 drag_pos;
+
+	// Vector2 touch_points[__MAX_TOUCH_POINTS];
+	Vector2* touch_points;
+	int touch_point_index;
 	
 } EVENT;
 

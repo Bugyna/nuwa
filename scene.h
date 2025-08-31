@@ -10,20 +10,19 @@
 #include "arena.h"
 #include "animation.h"
 
+#ifndef SCENE_H_
+#define SCENE_H_
 
-#ifndef ENTITY_H_
-#define ENTITY_H_
+typedef struct SCENE SCENE;
 
-typedef struct ENTITY ENTITY;
 
-struct ENTITY
+struct SCENE
 {
-	int state;
-	Vector3 pos;
-	
-	
+	LAYER_VECTOR layers;
 };
 
+DEFINE_VECTOR(SCENE_VECTOR, SCENE);
 
 #endif
+
 
